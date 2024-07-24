@@ -51,12 +51,14 @@ cost <- function(CMA, GP, ES, GP_post_n, GP_post_p, ES_post_n, ES_post_p, penalt
     (p_t12_es*(1-GP_yield)*p_t13_es + p_t12_es)*(ES + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
 }
 
+# Output a Plot
 plotBarPlot <-function(input){
   # Create a plot
   # implement business logic here
   plot(1:10, 1:10, type = "n", xlab = input$xaxis, ylab = input$yaxis)
 }
 
+# Output a Table
 generateParameterTable <-function(input){
   working_pt = pt 
   working_pt$default_value = NULL
