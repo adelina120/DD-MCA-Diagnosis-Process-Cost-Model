@@ -134,6 +134,7 @@ cost_equation <- function(input){
   return (c(expert_alone_cost, delegation_cost))
 }
 
+# Output a Plot
 plotBarPlot <-function(input){
   # Create a plot
   expected_cost <- cost_equation(input)
@@ -147,6 +148,7 @@ plotBarPlot <-function(input){
   )
 }
 
+# Output a Table
 generateParameterTable <-function(input){
   working_pt = pt 
   working_pt$default_value = NULL
