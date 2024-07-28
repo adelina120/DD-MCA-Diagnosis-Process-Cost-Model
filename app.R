@@ -13,7 +13,7 @@ if (!file.exists("parameter_lookup.csv")) {
              "expert_ES_tn", "expert_ES_tp","ai_CMA_tp" ,"ai_CMA_tn", "ai_GP_tn", "ai_GP_tp", "ai_ES_tn", "ai_ES_tp"),
     display_name = c("CMA test cost", "Gene-panel test cost", "Exome sequencing test cost",
                      "CMA post-test cost(positive)", "CMA post-test cost (negative)",
-                     "Gene-panel post-test cost(negative)", "Gene-panelpost-test cost(positive)",
+                     "Gene-panel post-test cost(negative)", "Gene-panel post-test cost(positive)",
                      "Exome Sequencing post-test cost(negative)", "Exome Sequencing post-tets cost(positive)",
                      "FN penalty cost","CMA diagnosis yield", "Gene-panel diagnosis yield", "Exome Sequencing diagnosis yield", 
                      "Expert TN rate (CMA)", "Expert TP rate (CMA)", "Expert TN rate (GP)", "Expert TP rate (GP)",
@@ -91,36 +91,49 @@ cost_equation <- function(input){
   
   if (input$xaxis == "Branch 1"){
     
-    # expert-alone mode
     p_t12_gp <- GP_yield * (expert_GP_tp - expert_GP_fp) + expert_GP_fp
     p_t12_es <- 1-p_t12_gp
     p_t13_exit <- ES_yield * (expert_ES_fn - expert_ES_tn) + expert_ES_tn
     p_t13_es <- 1-p_t13_exit
     
-    expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*p_t13_exit*(GP_post_n + penalty)) +
-      (p_t12_es*(1-GP_yield)*p_t13_es + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
-    
-    # delegation mode
     p_r1_gt_r1_star <- GP_yield*(ai_GP_tp-ai_GP_fp)+ai_GP_fp
     p_r1_sm_r1_star <- 1-p_r1_gt_r1_star
     p_r2_gt_r2_star <- ES_yield*(ai_ES_tp-ai_ES_fp)+ai_ES_fp
     p_r2_sm_r2_star <- 1-p_r2_gt_r2_star
     
+    if (input$exhaust_or_not == "No"){
+    
+      expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*p_t13_exit*(GP_post_n + penalty)) +
+        (p_t12_gp*(1-GP_yield)*p_t13_es + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
+      
+    } else{
+      
+      expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p) +
+        (p_t12_gp*(1-GP_yield) + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
+    }
+    
     delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*GP_post_n) +
-                       (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*
-                       (p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n) + p_r2_sm_r2_star*expert_alone_cost)
- 
+    (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*(p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + 
+    (1-ES_yield)*ES_post_n) + p_r2_sm_r2_star*expert_alone_cost)
+
   }
   
   else if (input$xaxis == "Branch 2"){ #Only one decision node
  
     p_t22_exit <- CMA_yield * (expert_CMA_fn - expert_CMA_tn) + expert_CMA_tn
     p_t22_cma <- 1 - p_t22_exit
-    p_r0_gt_r0_star <- CMA_yield*(ai_CMA_tp - ai_CMA_)
+    p_r0_gt_r0_star <- CMA_yield*(ai_CMA_tp - ai_CMA_fp) + ai_CMA_fp
     p_r0_sm_r0_star <- 1-p_r0_gt_r0_star
     
-    expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(p_t22_exit*(penalty+ES_post_n)) + 
-                         (1-ES_yield)*p_t22_exit*(CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)
+    if (input$exhaust_or_not == "No"){
+     
+      expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*p_t22_exit*(penalty+ES_post_n) + 
+                          (1-ES_yield)*p_t22_cma*(CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)
+    } else {
+      
+      expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)
+        
+    }
     
     delegation_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(p_r0_sm_r0_star)*expert_alone_cost +
                        (1-ES_yield)*p_r0_gt_r0_star*(CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)
@@ -137,15 +150,17 @@ cost_equation <- function(input){
 # Output a Plot
 plotBarPlot <-function(input){
   # Create a plot
-  expected_cost <- cost_equation(input)
-  plot(1:10, 1:10, type = "n", xlab = input$xaxis, ylab = input$yaxis)
-  barplot(
-    expected_cost,
-    beside = TRUE,
-    names.arg = c("Expert-alone mode", "Delegation mode"),
-    col = c("blue","red"),
-    ylab = "Expected costs"
+  cost_data <- data.frame(
+    Mode = c("Expert-alone mode", "Delegation mode"),
+    Cost = cost_equation(input)
   )
+  
+  #plot(1:10, 1:10, type = "n", xlab = input$xaxis, ylab = input$yaxis)
+  
+  ggplot(cost_data, aes(x = Mode, y = Cost, fill = Mode)) +
+    geom_bar(stat = "identity") + geom_text(aes(label = round(Cost, 2)), vjust = -0.5, size = 4) +
+    labs(x = input$xaxis, y = input$yaxis) +
+    theme_minimal() + theme(legend.position = "top")
 }
 
 # Output a Table
@@ -171,16 +186,22 @@ ui <- fluidPage(
       fluidRow(
         column(12,
                div(
-                 h4("X and Y axis"),
+                 #h4("X and Y axis"),
                  # Drop Down Menu for selecting y-axis. only one option can be selected for now
                  selectInput("yaxis", "Y-axis",
                              choices = c("Expected Cost"),
                              selected = "Expected Cost"),
                  selectInput("xaxis", "X-axis",
                              choices = c("Branch 1", "Branch 2", "Branch 3"),
-                             selected = "Branch 1")
-                 # add some annotation. The annotation will be shown when the mouse hover over the question mark
-                 # ybsPopover(id = "xaxis", title = NULL, content = "Branch 1: start with ES; Branch 2: start with ES", placement = "bottom", trigger = "hover")
+                             selected = "Branch 1"),
+                 bsPopover(id = "xaxis", title = NULL, content = "Branch 1 starts with CMA; Branch 2 starts with ES; Branch 3 conducts ES and CMA concurrently", 
+                            placement = "bottom", trigger = "hover"),
+                 selectInput("exhaust_or_not", "Exhaust all possible tests or not?",
+                             choices = c("Yes", "No"),
+                             selected = "No"),
+                 bsPopover(id = "exhaust_or_not", title = NULL, content = "If No is selected, then the patient will have the option 
+                           to exit the diagnosis test procedure; otherwise all possible tests will be conducted", 
+                           placement = "bottom", trigger = "hover")
                )
         )
       ),
@@ -267,9 +288,19 @@ ui <- fluidPage(
     ),
     mainPanel(
       h3("Introduction"),
-      # Add the branch figure from a file
-      img(src = "placeholder.png", align = "center"),
-      plotOutput("expected_cost"),
+      conditionalPanel(
+        condition = "input.xaxis == 'Branch 1'",
+        img(src = "branch1.png", width = "60%", height = "60%")
+      ),
+      conditionalPanel(
+        condition = "input.xaxis == 'Branch 2'",
+        img(src = "branch2.png", width = "60%", height = "60%")
+      ),
+      conditionalPanel(
+        condition = "input.xaxis == 'Branch 3'",
+        img(src = "branch3.png", width = "60%", height = "60%")
+      ),
+      plotOutput("expected_cost_plot"),
       DTOutput("Parameters")
     )
   )
@@ -289,7 +320,7 @@ server <- function(input, output, session) {
   })
   
   # Define a reactive expression for the plot
-  output$expected_cost <- renderPlot({
+  output$expected_cost_plot <- renderPlot({
     plotBarPlot(input)
   })
   output$Parameters <- renderDT({
