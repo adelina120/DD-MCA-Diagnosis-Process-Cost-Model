@@ -89,47 +89,52 @@ cost_equation <- function(input){
   expert_alone_cost <- 0
   delegation_cost <- 0
   
-  if (input$xaxis == "Branch 1"){
+  if (input$xaxis == "Branch 1"){# Formulas for Branch 1
     
+    C
     p_t12_gp <- GP_yield * (expert_GP_tp - expert_GP_fp) + expert_GP_fp
     p_t12_es <- 1-p_t12_gp
     p_t13_exit <- ES_yield * (expert_ES_fn - expert_ES_tn) + expert_ES_tn
     p_t13_es <- 1-p_t13_exit
     
+    #Probabilities under delegation mode
     p_r1_gt_r1_star <- GP_yield*(ai_GP_tp-ai_GP_fp)+ai_GP_fp
     p_r1_sm_r1_star <- 1-p_r1_gt_r1_star
     p_r2_gt_r2_star <- ES_yield*(ai_ES_tp-ai_ES_fp)+ai_ES_fp
     p_r2_sm_r2_star <- 1-p_r2_gt_r2_star
     
-    if (input$exhaust_or_not == "No"){
-    
-      expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*p_t13_exit*(GP_post_n + penalty)) +
+    if (input$exhaust_or_not == "No"){ # sub-condition: do not exhaust all possible tests, keep the option to exit
+      expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*p_t13_exit*(GP_post_n + ES_yield*penalty)) +
         (p_t12_gp*(1-GP_yield)*p_t13_es + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
-      
-    } else{
+
+    } else{ #exhaust all possible tests
       
       expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p) +
         (p_t12_gp*(1-GP_yield) + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
     }
     
-    delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*GP_post_n) +
-    (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*(p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + 
-    (1-ES_yield)*ES_post_n) + p_r2_sm_r2_star*expert_alone_cost)
-
+    #Note that the exhaust_or_not condition only applied to expert-alone mode
+    delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p) +    
+                       (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*
+                       (p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n) +
+                       p_r2_sm_r2_star*expert_alone_cost)
   }
   
-  else if (input$xaxis == "Branch 2"){ #Only one decision node
+  else if (input$xaxis == "Branch 2"){ #Formulas for Branch 2, only one decision node
  
+    #Probabilities under delegation mode
     p_t22_exit <- CMA_yield * (expert_CMA_fn - expert_CMA_tn) + expert_CMA_tn
     p_t22_cma <- 1 - p_t22_exit
+    
+    #Probabilities under delegation mode
     p_r0_gt_r0_star <- CMA_yield*(ai_CMA_tp - ai_CMA_fp) + ai_CMA_fp
     p_r0_sm_r0_star <- 1-p_r0_gt_r0_star
     
-    if (input$exhaust_or_not == "No"){
+    if (input$exhaust_or_not == "No"){ #sub-condition: do not exhaust all possible tests, keep the option to exit
      
-      expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*p_t22_exit*(penalty+ES_post_n) + 
-                          (1-ES_yield)*p_t22_cma*(CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)
-    } else {
+      expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(p_t22_exit*(ES_post_n+CMA_yield*penalty)+
+                           p_t22_cma*(CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n))
+    } else { #exhaust all possible tests
       
       expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)
         
