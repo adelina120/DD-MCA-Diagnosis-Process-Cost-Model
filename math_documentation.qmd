@@ -1,0 +1,192 @@
+---
+title: "Cost Equations"
+format: html
+editor: visual
+---
+
+# Parameter Table
+
+## Costs
+
+| Math Notation | Interpretation                                                                                                        |
+|------------------------|------------------------------------------------|
+| $C_0^t$       | Cost of CMA test                                                                                                      |
+| $C_1^t$       | Cost of gene-panel test                                                                                               |
+| $C_2^t$       | Cost of Exome sequencing test                                                                                         |
+| $C_0^n$       | Cost of post-test procedure for negative result of CMA                                                                |
+| $C_0^p$       | Cost of post-test procedure for positive result of CMA                                                                |
+| $C_1^n$       | Cost of post-test procedure for negative result of gene-panel                                                         |
+| $C_1^p$       | Cost of post-test procedure for positive result of gene-panel                                                         |
+| $C_2^n$       | Cost of post-test procedure for negative result of Exome sequencing                                                   |
+| $C_2^p$       | Cost of post-test procedure for positive result of Exome sequencing                                                   |
+| $C^{FN}$      | Penalty cost when the patient exit the test procedure, while a certain test can actually provide a positive diagnosis |
+
+## Diagnostic Yields
+
+| Math Notation | Interpretation                            |
+|---------------|-------------------------------------------|
+| $P(y_0=1)$    | Diagnostic yield of CMA test              |
+| $P(y_0=0)$    | $1-P(y_0=1)$                              |
+| $P(y_1=1)$    | Diagnostic yield of gene-panel test       |
+| $P(y_1=0)$    | $1-P(y_1=1)$                              |
+| $P(y_2=1)$    | Diagnostic yield of Exome sequencing test |
+| $P(y_2=0)$    | $1-P(y_2=1)$                              |
+
+## Expert Performances
+
+The expert makes a prediction $\hat{y}_k^E\ (k={0,1,2})$ on the diagnostic result of each test. The expert performance metrics compare the actual results with the expert's predicted results.
+
+| Math Notation | Interpretation                      | Derivation                               |
+|-----------------|---------------------------|----------------------------|
+| $P(TP_0^E)$   | Expert's TP rate on CMA test        | $P(\hat{y}_0^E=1\ |\ y_0=1)$             |
+| $P(TN_0^E)$   | Expert's TN rate on CMA test        | $P(\hat{y}_0^E=0\ |\ y_0=0)$             |
+| $P(FP_0^E)$   | Expert's FP rate on CMA test        | $P(\hat{y}_0^E=1\ |\ y_0=0)=1-P(TN_0^E)$ |
+| $P(FN_0^E)$   | Expert's FN rate on CMA test        | $P(\hat{y}_0^E=0\ |\ y_0=1)=1-P(TP^E_0)$ |
+| $P(TP_1^E)$   | Expert's TP rate on gene-panel test | $P(\hat{y}_1^E=1\ |\ y_1=1)$             |
+| $P(TN_1^E)$   | Expert's TN rate on gene-panel test | $P(\hat{y}_1^E=0\ |\ y_1=0)$             |
+| $P(FP_1^E)$   | Expert's FP rate on gene-panel test | $P(\hat{y}_1^E=1\ |\ y_1=0)=1-P(TN_1^E)$ |
+| $P(FN_1^E)$   | Expert's FN rate on gene-panel test | $P(\hat{y}_1^E=0\ |\ y_1=1)=1-P(TP^E_1)$ |
+| $P(TP_2^E)$   | Expert's TP rate on ES test         | $P(\hat{y}_2^E=1\ |\ y_2=1)$             |
+| $P(TN_2^E)$   | Expert's TN rate on ES test         | $P(\hat{y}_2^E=0\ |\ y_2=0)$             |
+| $P(FP_2^E)$   | Expert's FP rate on ES test         | $P(\hat{y}_2^E=1\ |\ y_2=0)=1-P(TN_2^E)$ |
+| $P(FN_2^E)$   | Expert's FN rate on ES test         | $P(\hat{y}_2^E=0\ |\ y_2=1)=1-P(TP^E_2)$ |
+
+## AI Performances
+
+AI predicts $r_k = P(y_k=1)$, the probability that the actual diagnostic result of a test is positive (i.e., the diagnostic yield of the test). If $r_k \geq r_k^*$ (some threshold value), then AI is assumed to predict a positive result $\hat{y}_k^{AI}=1$, otherwise $\hat{y}_k^{AI}=0.$
+
+$$
+r_k \geq r_k^* \implies \hat{y}_k^{AI} = 1
+$$ $$
+r_k < r_k^* \implies \hat{y}_k^{AI} = 0
+$$
+
+| Math Notation  | Interpretation                                                            |
+|------------------|------------------------------------------------------|
+| $P(TP_0^{AI})$ | $P(r_0\geq r_0^*\ |\ y_0=1)=P(\hat{y}_0^{AI}=1\ |\ y_0=1)$                |
+| $P(TN_0^{AI})$ | $P(r_0 < r_0^*\ |\ y_0=0)=P(\hat{y}_0^{AI}=0\ |\ y_0=0)$                  |
+| $P(FP_0^{AI})$ | $P(r_0\geq r_0^*\ |\ y_0=0)=P(\hat{y}_0^{AI}=1\ |\ y_0=0)=1-P(TN_0^{AI})$ |
+| $P(FN_0^{AI})$ | $P(r_0<r_0^*\ |\ y_0=1)=P(\hat{y}_0^{AI}=0\ |\ y_0=1)=1-P(TP^{AI}_0)$     |
+| $P(TP_1^{AI})$ | $P(r_1\geq r_1^*\ |\ y_1=1)=P(\hat{y}_1^{AI}=1\ |\ y_1=1)$                |
+| $P(TN_1^{AI})$ | $P(r_1 < r_1^*\ |\ y_1=0)=P(\hat{y}_1^{AI}=0\ |\ y_1=0)$                  |
+| $P(FP_1^{AI})$ | $P(r_1\geq r_1^*\ |\ y_1=0)=P(\hat{y}_1^{AI}=1\ |\ y_1=0)=1-P(TN_1^{AI})$ |
+| $P(FN_1^{AI})$ | $P(r_1<r_1^*\ |\ y_1=1)=P(\hat{y}_1^{AI}=0\ |\ y_1=1)=1-P(TP^{AI}_1)$     |
+| $P(TP_2^{AI})$ | $P(r_2\geq r_2^*\ |\ y_2=1)=P(\hat{y}_2^{AI}=1\ |\ y_2=1)$                |
+| $P(TN_2^{AI})$ | $P(r_2 < r_2^*\ |\ y_2=0)=P(\hat{y}_2^{AI}=0\ |\ y_2=0)$                  |
+| $P(FP_2^{AI})$ | $P(r_2\geq r_2^*\ |\ y_2=0)=P(\hat{y}_2^{AI}=1\ |\ y_2=0)=1-P(TN_2^{AI})$ |
+| $P(FN_2^{AI})$ | $P(r_2<r_2^*\ |\ y_2=1)=P(\hat{y}_2^{AI}=0\ |\ y_2=1)=1-P(TP^{AI}_2)$     |
+
+# Cost Formulation
+
+## Branch 1
+
+### Expert-alone Mode
+
+![](www/branch1.png){fig-align="center" width="524"}
+
+$P(t_{12}=1)\ =\ P(\hat{y}_1^E=1)\\ =\ P(\hat{y}_1^E=1\ |\ y_1=1)P(y_1=1)\ +\ P(\hat{y}_1^E=1\ |\ y_1=0)P(y_1=0)\\=\ P(TP_1^E)P(y_1=1)\ +\ P(FP_1^E)(1-P(y_1=1))\\=\ P(y_1=1)[(P(TP_1^E)-P(FP_1^E)]\ +\ P(FP_1^E)$
+
+```{r}
+p_t12_gp <- GP_yield * (expert_GP_tp - expert_GP_fp) + expert_GP_fp
+```
+
+$P(t_{12}=2)=1-P(t_{12}=1)$
+
+```{r}
+p_t12_es <- 1-p_t12_gp
+```
+
+$P(t_{13}=\emptyset)\ =\ P(\hat{y}_2^E=0)\\ =\ P(\hat{y}_2^E=0\ |\ y_2=1)P(y_2=1)\ +\ P(\hat{y}_2^E=0\ |\ y_2=0)P=(y_2=0)\\=\ P(FN_2^E)P(y_2=1)\ +\ P(TN_2^E)(1-P(y_2=1))\\ =\ P(y_2=1)[(P(FN_2^E)-P(TN_2^E)]\ +\ P(TN_2^E)$
+
+```{r}
+p_t13_exit <- ES_yield * (expert_ES_fn - expert_ES_tn) + expert_ES_tn
+```
+
+$P(t_{13}=2)\ =\ 1-P(t_{13}=\emptyset)$
+
+```{r}
+p_t13_es <- 1-p_t13_exit
+```
+
+#### Not exhaust all tests
+
+$E(C_1^E)=C_0^t\ +\ P(t_{12}=1)*[C_1^t\ + P(y_1=1)C_1^p + P(y_1=0)*P(t_{13}=\emptyset)*(C_1^n+P(y_2=1)C^{FN})]\ + \\ [P(t_{12}=1)P(y_1=0)P(t_{13}=2)\ +\ P(t_{12}=2)]*[C_2^t\ +\ P(y_2=1)C_2^p\ +\ P(y_2=0)C_2^n]$
+
+```{r}
+expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p +                   (1-GP_yield)*p_t13_exit*(GP_post_n + ES_yield*penalty)) +
+        (p_t12_gp*(1-GP_yield)*p_t13_es + p_t12_es)*(ES_cost + ES_yield*ES_post_p +         (1-ES_yield)*ES_post_n)
+```
+
+#### Exhaust all tests
+
+$E(C_e)=C_0^t\ +\ P(t_{12}=1)*(C_1^t\ + P(y_1=1)C_1^p)\ + \\ [P(t_{12}=1)P(y_1=0)\ +\ P(t_{12}=2)]*[C_2^t\ +\ P(y_2=1)C_2^p\ +\ P(y_2=0)C_2^n]$
+
+```{r}
+expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p) +
+        (p_t12_gp*(1-GP_yield) + p_t12_es)*(ES_cost + ES_yield*ES_post_p + 
+        (1-ES_yield)*ES_post_n)
+
+```
+
+#### Delegation Mode
+
+![](images/472cdea1c9ffa3b9fae656864ed3620.png){fig-align="center" width="526"}
+
+$P(r_1\geq r_1^*)\ =\ P(\hat{y}_1^{AI}=1)\\ =\ P(\hat{y}_1^{AI}=1\ |\ y_1=1)P(y_1=1)\ +\ P(\hat{y}_1^{AI}=1\ |\ y_1=0)P(y_1=0)\\=\ P(TP_1^{AI})P(y_1=1)\ +\ P(FP_1^{AI})(1-P(y_1=1))\\ =\ P(y_1=1)[(P(TP_1^{AI})-P(FP_1^{AI})]\ +\ P(FP_1^{AI})$
+
+```{r}
+p_r1_gt_r1_star <- GP_yield*(ai_GP_tp-ai_GP_fp)+ai_GP_fp
+```
+
+$P(r_1<r_1^*)\ =\ P(\hat{y}_1^{AI}=0)\ =\ 1-P(r_1\geq r_1^*)$
+
+```{r}
+p_r1_sm_r1_star <- 1-p_r1_gt_r1_star
+```
+
+$P(r_2\geq r_2^*)\ =\ P(\hat{y}_2^{AI}=1)\\ =\ P(\hat{y}_2^{AI}=1\ |\ y_2=1)P(y_2=1)\ +\ P(\hat{y}_2^{AI}=1\ |\ y_2=0)P(y_2=0)\\=\ P(TP_2^{AI})P(y_2=1)\ +\ P(FP_2^{AI})(1-P(y_2=1))\\ =\ P(y_2=1)[(P(TP_2^{AI})-P(FP_2^{AI})]\ +\ P(FP_2^{AI})$
+
+```{r}
+p_r2_gt_r2_star <- ES_yield*(ai_ES_tp-ai_ES_fp)+ai_ES_fp
+```
+
+$P(r_2<r_2^*)\ =\ P(\hat{y}_2^{AI}=0)\ =\ 1-P(r_2\geq r_2^*)$
+
+```{r}
+p_r2_sm_r2_star <- 1-p_r2_gt_r2_star
+```
+
+$E(C_1^D)=C_0^t\ +\ P(r_1\geq r_1^*)(C_1^t\ + P(y_1=1)C_1^p)\ + \\ [P(r_1\geq r_1^*)P(y_1=0)\ +\ P(r_1<r_1^*)]*\\ [P(r_2\geq\ r_2*)(C_2^t+P(y_2=1)C_2^p+P(y_2=0)C_2^n)\ +\ P(r_2<r_2^*)E(C_1^E)]$
+
+```{r}
+delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p) +    (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*
+(p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n) + p_r2_sm_r2_star*expert_alone_cost)
+```
+
+## Branch 2
+
+### Expert-alone Mode
+
+![](images/branch2.png){fig-align="center" width="482"}
+
+$P(t_{22}=\emptyset)\ =\ P(\hat{y}_0^E=0)\\ =\ P(\hat{y}_0^E=0\ |\ y_0=1)P(y_0=1)\ +\ P(\hat{y}_0^E=0\ |\ y_0=0)P=(y_0=0)\\=\ P(FN_0^E)P(y_0=1)\ +\ P(TN_0^E)(1-P(y_0=1))\\ =\ P(y_0=1)[(P(FN_0^E)-P(TN_0^E)]\ +\ P(TN_0^E)$
+
+```{r}
+p_t22_exit <- CMA_yield * (expert_CMA_fn - expert_CMA_tn) + expert_CMA_tn
+```
+
+$P(t_{22}=0)\ =\ 1-P(t_{22}=\emptyset)$
+
+```{r}
+p_t22_cma <- 1 - p_t22_exit
+```
+
+$E(C_2^E)\ =\ C_2^t+P(y_2=1)C_2^p+P(y_2=0)[P(t_{22}=\emptyset)(P(y_0=1)C^{FN}+C_2^n)+P(t_{22}=0)(C_0^t+P(y_0=1)C_0^p+P(y_0=0)C_0^n)]$
+
+```{r}
+expert_alone_cost <- ES_cost + ES_yield*ES_post_p + 
+                    (1-ES_yield)*(p_t22_exit*(ES_post_n+CMA_yield*penalty)+ 
+           p_t22_cma*(CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n))
+```
+
+### Delegation Mode
