@@ -91,7 +91,7 @@ cost_equation <- function(input){
   
   if (input$xaxis == "Branch 1"){# Formulas for Branch 1
     
-    C
+    #Probabilities under expert-alone mode
     p_t12_gp <- GP_yield * (expert_GP_tp - expert_GP_fp) + expert_GP_fp
     p_t12_es <- 1-p_t12_gp
     p_t13_exit <- ES_yield * (expert_ES_fn - expert_ES_tn) + expert_ES_tn
@@ -104,25 +104,25 @@ cost_equation <- function(input){
     p_r2_sm_r2_star <- 1-p_r2_gt_r2_star
     
     if (input$exhaust_or_not == "No"){ # sub-condition: do not exhaust all possible tests, keep the option to exit
-      expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*p_t13_exit*(GP_post_n + ES_yield*penalty)) +
-        (p_t12_gp*(1-GP_yield)*p_t13_es + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
-
+      
+      expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*(GP_post_n + p_t13_exit*ES_yield*penalty)) +
+                           (p_t12_gp*(1-GP_yield)*p_t13_es + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
+    
     } else{ #exhaust all possible tests
       
-      expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p) +
-        (p_t12_gp*(1-GP_yield) + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
+      expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*GP_post_n) +
+                          (p_t12_gp*(1-GP_yield) + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
     }
     
-    #Note that the exhaust_or_not condition only applied to expert-alone mode
-    delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p) +    
-                       (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*
-                       (p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n) +
-                       p_r2_sm_r2_star*expert_alone_cost)
+    #exhaust_or_not condition only applied to expert-alone mode
+    delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*GP_post_p) +
+                      (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*
+                      (p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n) + p_r2_sm_r2_star*expert_alone_cost)
   }
   
-  else if (input$xaxis == "Branch 2"){ #Formulas for Branch 2, only one decision node
+  else { #Formulas for Branch 2, only one decision node
  
-    #Probabilities under delegation mode
+    #Probabilities under expert-alone mode
     p_t22_exit <- CMA_yield * (expert_CMA_fn - expert_CMA_tn) + expert_CMA_tn
     p_t22_cma <- 1 - p_t22_exit
     
@@ -132,23 +132,18 @@ cost_equation <- function(input){
     
     if (input$exhaust_or_not == "No"){ #sub-condition: do not exhaust all possible tests, keep the option to exit
      
-      expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(p_t22_exit*(ES_post_n+CMA_yield*penalty)+
+      expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(ES_post_n + p_t22_exit*CMA_yield*penalty + 
                            p_t22_cma*(CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n))
+      
     } else { #exhaust all possible tests
       
-      expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)
-        
+      expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(ES_post_n + CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)
     }
     
-    delegation_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(p_r0_sm_r0_star)*expert_alone_cost +
-                       (1-ES_yield)*p_r0_gt_r0_star*(CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)
+    delegation_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(ES_post_n + p_r0_sm_r0_star*expert_alone_cost + 
+                       p_r0_gt_r0_star*(CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n))
   }
-  
-  else{
-    expert_alone_cost <- ES_cost + CMA_cost
-    delegation_cost <- ES_cost + CMA_cost
-  }
-  
+
   return (c(expert_alone_cost, delegation_cost))
 }
 
@@ -197,16 +192,15 @@ ui <- fluidPage(
                              choices = c("Expected Cost"),
                              selected = "Expected Cost"),
                  selectInput("xaxis", "X-axis",
-                             choices = c("Branch 1", "Branch 2", "Branch 3"),
+                             choices = c("Branch 1", "Branch 2"),
                              selected = "Branch 1"),
-                 bsPopover(id = "xaxis", title = NULL, content = "Branch 1 starts with CMA; Branch 2 starts with ES; Branch 3 conducts ES and CMA concurrently", 
-                            placement = "bottom", trigger = "hover"),
+                 bsPopover(id = "xaxis", title = NULL, content = "Branch 1 starts with CMA; Branch 2 starts with ES", 
+                           placement = "top", trigger = "hover"),
                  selectInput("exhaust_or_not", "Exhaust all possible tests or not?",
-                             choices = c("Yes", "No"),
+                             choices = c("No", "Yes"),
                              selected = "No"),
-                 bsPopover(id = "exhaust_or_not", title = NULL, content = "If No is selected, then the patient will have the option 
-                           to exit the diagnosis test procedure; otherwise all possible tests will be conducted", 
-                           placement = "bottom", trigger = "hover")
+                 bsPopover(id = "exhaust_or_not", title = NULL, content = "If No is selected, then the patient will have the option to exit the test procedure",
+                           placement = "top", trigger = "hover")
                )
         )
       ),
@@ -228,6 +222,10 @@ ui <- fluidPage(
                  div(
                    h4("Cost Parameters"),
                    numericInput("CMA_cost", pt$display_name[pt$name == "CMA_cost"], value = pt$default_value[pt$name == "CMA_cost"], min = 0),
+                   
+                   bsPopover(id = "CMA_cost", title = NULL, content = pt$description[pt$name=="CMA_cost"],
+                             placement = "top", trigger = "hover"),
+                   
                    numericInput("GP_cost", pt$display_name[pt$name == "GP_cost"], value = pt$default_value[pt$name == "GP_cost"], min = 0),
                    numericInput("ES_cost", pt$display_name[pt$name == "ES_cost"], value = pt$default_value[pt$name == "ES_cost"], min = 0),
                    numericInput("CMA_post_n", pt$display_name[pt$name == "CMA_post_n"], value = pt$default_value[pt$name == "CMA_post_n"], min = 0),
@@ -300,10 +298,6 @@ ui <- fluidPage(
       conditionalPanel(
         condition = "input.xaxis == 'Branch 2'",
         img(src = "branch2.png", width = "60%", height = "60%")
-      ),
-      conditionalPanel(
-        condition = "input.xaxis == 'Branch 3'",
-        img(src = "branch3.png", width = "60%", height = "60%")
       ),
       plotOutput("expected_cost_plot"),
       DTOutput("Parameters")
