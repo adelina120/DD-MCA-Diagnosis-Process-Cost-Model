@@ -1,6 +1,6 @@
 library(shiny)
-library(bslib)
 library(shinyBS)
+library(shinyjs)
 library(DT)
 library(ggplot2)
 
@@ -176,18 +176,18 @@ generateParameterTable <-function(input){
   working_pt
 }
 
-
 ui <- fluidPage(
+  
+  useShinyjs(),  # Initialize shinyjs
+  
   titlePanel("Cost Function Visualization"),
-  # Add some customized CSS styles
+  
   
   sidebarLayout(
     sidebarPanel(
       fluidRow(
         column(12,
                div(
-                 #h4("X and Y axis"),
-                 # Drop Down Menu for selecting y-axis. only one option can be selected for now
                  selectInput("yaxis", "Y-axis",
                              choices = c("Expected Cost"),
                              selected = "Expected Cost"),
@@ -222,10 +222,6 @@ ui <- fluidPage(
                  div(
                    h4("Cost Parameters"),
                    numericInput("CMA_cost", pt$display_name[pt$name == "CMA_cost"], value = pt$default_value[pt$name == "CMA_cost"], min = 0),
-                   
-                   bsPopover(id = "CMA_cost", title = NULL, content = pt$description[pt$name=="CMA_cost"],
-                             placement = "top", trigger = "hover"),
-                   
                    numericInput("GP_cost", pt$display_name[pt$name == "GP_cost"], value = pt$default_value[pt$name == "GP_cost"], min = 0),
                    numericInput("ES_cost", pt$display_name[pt$name == "ES_cost"], value = pt$default_value[pt$name == "ES_cost"], min = 0),
                    numericInput("CMA_post_n", pt$display_name[pt$name == "CMA_post_n"], value = pt$default_value[pt$name == "CMA_post_n"], min = 0),
@@ -234,14 +230,25 @@ ui <- fluidPage(
                    numericInput("GP_post_p", pt$display_name[pt$name == "GP_post_p"], value = pt$default_value[pt$name == "GP_post_p"], min = 0),
                    numericInput("ES_post_n", pt$display_name[pt$name == "ES_post_n"], value = pt$default_value[pt$name == "ES_post_n"], min = 0),
                    numericInput("ES_post_p", pt$display_name[pt$name == "ES_post_p"], value = pt$default_value[pt$name == "ES_post_p"], min = 0),
-                   numericInput("penalty", pt$display_name[pt$name == "penalty"], value = pt$default_value[pt$name == "penalty"], min = 0)
+                   numericInput("penalty", pt$display_name[pt$name == "penalty"], value = pt$default_value[pt$name == "penalty"], min = 0),
+                   
+                   # Annotation
+                   bsPopover(id = "CMA_cost", title = NULL, content = pt$description[pt$name=="CMA_cost"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "GP_cost", title = NULL, content = pt$description[pt$name=="GP_cost"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "ES_cost", title = NULL, content = pt$description[pt$name=="ES_cost"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "CMA_post_n", title = NULL, content = pt$description[pt$name=="CMA_post_n"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "CMA_post_p", title = NULL, content = pt$description[pt$name=="CMA_post_p"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "GP_post_n", title = NULL, content = pt$description[pt$name=="GP_post_n"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "GP_post_p", title = NULL, content = pt$description[pt$name=="GP_post_p"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "ES_post_n", title = NULL, content = pt$description[pt$name=="ES_post_n"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "ES_post_p", title = NULL, content = pt$description[pt$name=="ES_post_p"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "penalty", title = NULL, content = pt$description[pt$name=="penalty"],placement = "top", trigger = "hover")
                  )
           )
         )
       ),
       
       conditionalPanel(
-          
         condition = "input.parameter_group == 'Diagnostic Yield'",
         fluidRow(
           column(12,
@@ -249,7 +256,12 @@ ui <- fluidPage(
                    h4("Diagnostic Yields"),
                    numericInput("CMA_yield", pt$display_name[pt$name == "CMA_yield"], value = pt$default_value[pt$name == "CMA_yield"], min = 0),
                    numericInput("GP_yield", pt$display_name[pt$name == "GP_yield"], value = pt$default_value[pt$name == "GP_yield"], min = 0),
-                   numericInput("ES_yield", pt$display_name[pt$name == "ES_yield"], value = pt$default_value[pt$name == "ES_yield"], min = 0)
+                   numericInput("ES_yield", pt$display_name[pt$name == "ES_yield"], value = pt$default_value[pt$name == "ES_yield"], min = 0),
+                   
+                   # Annotation
+                   bsPopover(id = "CMA_yield", title = NULL, content = pt$description[pt$name=="CMA_yield"], placement = "top", trigger = "hover"),
+                   bsPopover(id = "GP_yield", title = NULL, content = pt$description[pt$name=="GP_yield"], placement = "top", trigger = "hover"),
+                   bsPopover(id = "ES_yield", title = NULL, content = pt$description[pt$name=="ES_yield"],placement = "top", trigger = "hover")
                  )
           )
         )
@@ -267,7 +279,14 @@ ui <- fluidPage(
                    numericInput("expert_GP_tp", pt$display_name[pt$name == "expert_GP_tp"], value = pt$default_value[pt$name == "expert_GP_tp"], min = 0),
                    numericInput("expert_ES_tn", pt$display_name[pt$name == "expert_ES_tn"], value = pt$default_value[pt$name == "expert_ES_tn"], min = 0),
                    numericInput("expert_ES_tp", pt$display_name[pt$name == "expert_ES_tp"], value = pt$default_value[pt$name == "expert_ES_tp"], min = 0),
-                  )
+                   
+                   bsPopover(id = "expert_CMA_tn", title = NULL, content = pt$description[pt$name=="expert_CMA_tn"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "expert_CMA_tp", title = NULL, content = pt$description[pt$name=="expert_CMA_tp"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "expert_GP_tn", title = NULL, content = pt$description[pt$name=="expert_GP_tn"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "expert_GP_tp", title = NULL, content = pt$description[pt$name=="expert_GP_tp"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "expert_ES_tn", title = NULL, content = pt$description[pt$name=="expert_ES_tn"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "expert_ES_tp", title = NULL, content = pt$description[pt$name=="expert_ES_tp"],placement = "top", trigger = "hover")
+                 )
           )
         )
       ),
@@ -284,23 +303,65 @@ ui <- fluidPage(
                    numericInput("ai_GP_tp", pt$display_name[pt$name == "ai_GP_tp"], value = pt$default_value[pt$name == "ai_GP_tp"], min = 0),
                    numericInput("ai_ES_tn", pt$display_name[pt$name == "ai_ES_tn"], value = pt$default_value[pt$name == "ai_ES_tn"], min = 0),
                    numericInput("ai_ES_tp", pt$display_name[pt$name == "ai_ES_tp"], value = pt$default_value[pt$name == "ai_ES_tp"], min = 0),
+                   
+                   bsPopover(id = "ai_CMA_tn", title = NULL, content = pt$description[pt$name=="ai_CMA_tn"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "ai_CMA_tp", title = NULL, content = pt$description[pt$name=="ai_CMA_tp"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "ai_GP_tn", title = NULL, content = pt$description[pt$name=="ai_GP_tn"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "ai_GP_tp", title = NULL, content = pt$description[pt$name=="ai_GP_tp"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "ai_ES_tn", title = NULL, content = pt$description[pt$name=="ai_ES_tn"],placement = "top", trigger = "hover"),
+                   bsPopover(id = "ai_ES_tp", title = NULL, content = pt$description[pt$name=="ai_ES_tp"],placement = "top", trigger = "hover")
                  )
           )
         )
-      ),
+      )
     ),
+    
     mainPanel(
-      h3("Introduction"),
-      conditionalPanel(
-        condition = "input.xaxis == 'Branch 1'",
-        img(src = "branch1.png", width = "60%", height = "60%")
+      div( #Add a seprate introduction page before displaying the plot and the data frame
+        id = "intro_page",
+        h3("Introduction"),
+        p("This app is designed to visualize the cost of the diagnosis procedure for patients with development delays and multiple congenital anomalies.
+          Two modes are assumed to be implemented in the diagnosis process: the expert-alone mode, where only human experts are involved in recommending 
+          the tests; and the delegation mode, where AI helps to select which test to procees with by predicting the diagnostic yield of the relevant tests. 
+          Please click the continue button and select a branch to see more details.",
+          style = "font-size: 20px;"
+        ),
+        actionButton("continue", "Continue", class = "btn-warning")
       ),
-      conditionalPanel(
-        condition = "input.xaxis == 'Branch 2'",
-        img(src = "branch2.png", width = "60%", height = "60%")
-      ),
-      plotOutput("expected_cost_plot"),
-      DTOutput("Parameters")
+      
+      hidden(
+        div(
+          id = "main_page",
+          conditionalPanel(
+            condition = "input.xaxis == 'Branch 1'",
+            h3("Branch 1"),
+            h4("Expert-alone Mode"),
+            img(src = "branch1.png", width = "60%", height = "60%"),
+            h4("Delegation Mode"),
+            img(src = "branch1_delegation.png", width = "80%", height = "80%"),
+            
+            #Explanation of delegation mode
+            p("In the delegation mode of this branch, AI first predicts the diagnostic yield of gene-panel test (r1). If it's bigger than some threshold 
+            value (r1*),then gene-panel test will be selected; otherwise, AI will proceed to predict the diagnostic yield of exome sequencing (r2). 
+            Simiarly, exome sequencing will be recommended if the predicted yield is bigger than a threshold value (r2*). If not, human experts will intervene."
+            )
+          ),
+          conditionalPanel(
+            condition = "input.xaxis == 'Branch 2'",
+            h3("Branch 2"),
+            h4("Expert-alone Mode"),
+            img(src = "branch2.png", width = "60%", height = "60%"),
+            h4("Delegation Mode"),
+            img(src = "branch2_delegation.png", width = "80%", height = "80%"),
+            
+            p("In the delegation mode of this branch, AI will predict the diagnostic yield of CMA (r0) following a negative diagnosis of exome sequencing. 
+            If it's bigger than the threshold value (r0*),then CMA can be proceeded; otherwise, human experts will intervene."
+            )
+          ),
+          plotOutput("expected_cost_plot"),
+          DTOutput("Parameters")
+        )
+      )
     )
   )
 )
@@ -316,6 +377,12 @@ server <- function(input, output, session) {
     for (i in 1:nrow(pt)) {
       updateNumericInput(session, pt$name[i], value = pt$default_value[i], min=0)
     }
+  })
+  
+  # Proceed to plot and data output when continue button is clicked
+  observeEvent(input$continue, {
+    hide("intro_page")
+    show("main_page")
   })
   
   # Define a reactive expression for the plot
