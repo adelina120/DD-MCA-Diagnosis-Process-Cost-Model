@@ -9,7 +9,7 @@ editor: visual
 ## Costs
 
 | Math Notation | Interpretation                                                                                                        |
-|--------------|----------------------------------------------------------|
+|---------------|-----------------------------------------------------------------------------------------------------------------------|
 | $C_0^t$       | Cost of CMA test                                                                                                      |
 | $C_1^t$       | Cost of gene-panel test                                                                                               |
 | $C_2^t$       | Cost of Exome sequencing test                                                                                         |
@@ -37,7 +37,7 @@ editor: visual
 The expert makes a prediction $\hat{y}_k^E\ (k={0,1,2})$ on the diagnostic result of each test. The expert performance metrics compare the actual results with the expert's predicted results.
 
 | Math Notation | Interpretation                      | Derivation                               |
-|----------------|--------------------------|------------------------------|
+|---------------|-------------------------------------|------------------------------------------|
 | $P(TP_0^E)$   | Expert's TP rate on CMA test        | $P(\hat{y}_0^E=1\ |\ y_0=1)$             |
 | $P(TN_0^E)$   | Expert's TN rate on CMA test        | $P(\hat{y}_0^E=0\ |\ y_0=0)$             |
 | $P(FP_0^E)$   | Expert's FP rate on CMA test        | $P(\hat{y}_0^E=1\ |\ y_0=0)=1-P(TN_0^E)$ |
@@ -62,7 +62,7 @@ r_k < r_k^* \implies \hat{y}_k^{AI} = 0
 $$
 
 | Math Notation  | Interpretation                                                            |
-|----------------|--------------------------------------------------------|
+|----------------|---------------------------------------------------------------------------|
 | $P(TP_0^{AI})$ | $P(r_0\geq r_0^*\ |\ y_0=1)=P(\hat{y}_0^{AI}=1\ |\ y_0=1)$                |
 | $P(TN_0^{AI})$ | $P(r_0 < r_0^*\ |\ y_0=0)=P(\hat{y}_0^{AI}=0\ |\ y_0=0)$                  |
 | $P(FP_0^{AI})$ | $P(r_0\geq r_0^*\ |\ y_0=0)=P(\hat{y}_0^{AI}=1\ |\ y_0=0)=1-P(TN_0^{AI})$ |
@@ -84,7 +84,7 @@ $$
 
 ![](www/branch1.png){fig-align="center" width="524"}
 
-$P(t_{12}=1)\ =\ P(\hat{y}_1^E=1)\\ =\ P(\hat{y}_1^E=1\ |\ y_1=1)P(y_1=1)\ +\ P(\hat{y}_1^E=1\ |\ y_1=0)P(y_1=0)\\=\ P(TP_1^E)P(y_1=1)\ +\ P(FP_1^E)(1-P(y_1=1))\\=\ P(y_1=1)[(P(TP_1^E)-P(FP_1^E)]\ +\ P(FP_1^E)$
+$P(t_{12}=1)\ =\ P(\hat{y}_1^E=1 \ |\ patient)\\ =\ P(\hat{y}_1^E=1\ |\ y_1=1)P(y_1=1)\ +\ P(\hat{y}_1^E=1\ |\ y_1=0)P(y_1=0)\\=\ P(TP_1^E)P(y_1=1)\ +\ P(FP_1^E)(1-P(y_1=1))\\=\ P(y_1=1)[(P(TP_1^E)-P(FP_1^E)]\ +\ P(FP_1^E)$
 
 ```{r}
 p_t12_gp <- GP_yield * (expert_GP_tp - expert_GP_fp) + expert_GP_fp
@@ -131,7 +131,7 @@ expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p +
 
 ### Delegation Mode
 
-![](images/d974008acfe2f388a93fc3660921aed.png){fig-align="center" width="544"}
+![](www/branch1_delegation.png){fig-align="center"}
 
 $P(r_1\geq r_1^*)\ =\ P(\hat{y}_1^{AI}=1)\\ =\ P(\hat{y}_1^{AI}=1\ |\ y_1=1)P(y_1=1)\ +\ P(\hat{y}_1^{AI}=1\ |\ y_1=0)P(y_1=0)\\=\ P(TP_1^{AI})P(y_1=1)\ +\ P(FP_1^{AI})(1-P(y_1=1))\\ =\ P(y_1=1)[(P(TP_1^{AI})-P(FP_1^{AI})]\ +\ P(FP_1^{AI})$
 
@@ -157,20 +157,33 @@ $P(r_2<r_2^*)\ =\ P(\hat{y}_2^{AI}=0)\ =\ 1-P(r_2\geq r_2^*)$
 p_r2_sm_r2_star <- 1-p_r2_gt_r2_star
 ```
 
-$E(C_1^D)=C_0^t\ +\ P(r_1\geq r_1^*)(C_1^t\ + P(y_1=1)C_1^p)\ + \\ [P(r_1\geq r_1^*)P(y_1=0)\ +\ P(r_1<r_1^*)]*\\ [P(r_2\geq\ r_2*)(C_2^t+P(y_2=1)C_2^p+P(y_2=0)C_2^n)\ +\ P(r_2<r_2^*)E(C_1^E)]$
+#### Exhaust all tests
+
+$E(C_1^D)=C_0^t\ +\ P(r_1\geq r_1^*)(C_1^t\ + P(y_1=1)C_1^p)\ + \\ [P(r_1\geq r_1^*)P(y_1=0)\ +\ P(r_1<r_1^*)]*[C_2^t+P(y_2=1)C_2^p+P(y_2=0)C_2^n]$
 
 ```{r}
 delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p + 
                   (1-GP_yield)*GP_post_p) +
                   (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*
-(p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n) + p_r2_sm_r2_star*expert_alone_cost)
+                  (ES_cost+ES_yield*ES_post_p+ (1-ES_yield)*ES_post_n)
+```
+
+#### Not exhaust all tests
+
+$E(C_1^D)=C_0^t\ +\ P(r_1\geq r_1^*)(C_1^t\ + P(y_1=1)C_1^p)\ + \\ [P(r_1\geq r_1^*)P(y_1=0)\ +\ P(r_1<r_1^*)]*\\ [P(r_2\geq\ r_2*)(C_2^t+P(y_2=1)C_2^p+P(y_2=0)C_2^n)\ +\\ P(r_2<r_2^*)(P(t_{13}=\emptyset)(C_1^n+P(y_2=1)C^{FN})+P(t_{13}=2)(C_2^t+P(y_2=1)C_2^p+P(y_2=0)C_2^n]$
+
+```{r}
+delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p + 
+                  (1-GP_yield)*GP_post_p) +
+                  (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*
+(p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n) + p_r2_sm_r2_star*(p_t13_exit*(GP_post_n+penalty) + p_t13_es*(ES_cost+ES_yield*ES_post_p+ (1-ES_yield)*ES_post_n)))
 ```
 
 ## Branch 2
 
 ### Expert-alone Mode
 
-![](images/branch2.png){fig-align="center" width="482"}
+![](www/branch2.png){fig-align="center" width="450"}
 
 $P(t_{22}=\emptyset)\ =\ P(\hat{y}_0^E=0)\\ =\ P(\hat{y}_0^E=0\ |\ y_0=1)P(y_0=1)\ +\ P(\hat{y}_0^E=0\ |\ y_0=0)P=(y_0=0)\\=\ P(FN_0^E)P(y_0=1)\ +\ P(TN_0^E)(1-P(y_0=1))\\ =\ P(y_0=1)[(P(FN_0^E)-P(TN_0^E)]\ +\ P(TN_0^E)$
 
@@ -204,7 +217,7 @@ expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(ES_post_n +  C
 
 ### Delegation Mode
 
-![](images/1023ba925ce642ee5a8ea087868ac47.png){fig-align="center" width="668"}
+![](www/branch2_delegation.png){fig-align="center" width="608"}
 
 $P(r_0\geq r_0^*)\ =\ P(\hat{y}_0^{AI}=1)\\ =\ P(\hat{y}_0^{AI}=1\ |\ y_2=1)P(y_0=1)\ +\ P(\hat{y}_0^{AI}=1\ |\ y_0=0)P(y_0=0)\\=\ P(TP_0^{AI})P(y_0=1)\ +\ P(FP_0^{AI})(1-P(y_0=1))\\ =\ P(y_0=1)[(P(TP_0^{AI})-P(FP_0^{AI})]\ +\ P(FP_0^{AI})$
 
@@ -217,9 +230,49 @@ $P(r_0<r_0^*)\ =\ P(\hat{y}_0^{AI}=0)\ =\ 1-P(r_0\geq r_0^*)$
 ```{p_r0_sm_r0_star <- 1-p_r0_gt_r0_star}
 ```
 
-$E(C_2^D)\ =\ C_2^t + P(y_2=1)C_2^p + P(y_2=0)[C_2^n + P(r_0<r_0^*)E(C_2^E)\ +\\ P(r_0\geq r_0^*)(C_0^t + P(y_0=1)C_1^p + P(y_0=0)C_1^n)]$
+#### Not exhaust all tests
+
+$E(C_2^D)\ =\ C_2^t + P(y_2=1)C_2^p + P(y_2=0)[C_2^n + P(r_0\geq r_0^*)(C_0^t + P(y_0=1)C_0^p + P(y_0=0)C_0^n)\ +\\P(r_0<r_0^*)(P(t_{22}=\emptyset) P(y_2=1)C^{FN}+P(t_{22}=0)(C_0^t+P(y_0=1)C_0^p+P(y_0=0)C_0^n))]$
 
 ```{r}
 delegation_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(ES_post_n +
- p_r0_sm_r0_star*expert_alone_cost + p_r0_gt_r0_star*(CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n))
+ p_r0_gt_r0_star*(CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n) + p_r0_sm_r0_star*(p_t22_exit*ES_yield*penalty + p_t22_cma*(CMA_cost+CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)))
 ```
+
+#### Exhaust all tests
+
+Same as expert-alone mode:
+
+$E(C_2^D)\ =\ C_2^t+P(y_2=1)C_2^p+P(y_2=0)[C_2^n + C_0^t+P(y_0=1)C_0^p+P(y_0=0)C_0^n)]$
+
+# Generalization
+
+Let $T$ be a tree with $m$ nodes representing the complete graph of the diagnostic process for a certain disease. $T=(N,E)$ where $N=\{n_i\ |\ i=0,1,2,...,m-1\}$ is the set of nodes (root node $n_0$), and $E=\{e_{ij}\ |\ n_j \in\ children(n_i)\}$ is the set of edges between a parent node and its children nodes. The set of leaf nodes is defined as $\{n_l \in N\ |\ children(n_l)=\emptyset\}$.
+
+Let $P_{ij}$ be the probability associated with edge $e_{ij}$ and $E(C_i)$ be the expected cost at node $n_i$. Initialize all the leaf nodes with some base values: $C_l=C_l^{Base}\ \forall\ n_l$.
+
+Define a recursive funtion for the expected cost at node $n_i$:
+
+$$
+E(C_i) = 
+\begin{cases} 
+    C_l^{Base}\ & \text{if}\ children(n_i)=\emptyset\  \text{(base case)}\\
+    C_i+\sum{_{n_j\in children(n_i)\ }P_{ij}E(C_j)}\ & \text{otherwise}
+\end{cases}
+$$
+
+Following the function above, the expected cost of the complete diagnostic process will be the expected cost at the root node $E(C_0)$.
+
+$P(t_1=k)C_k^t$
+
+$\sum{P(t_1=k)[(P(y_k=1)C_k^p + P(y_k=0)C_k^n]}$
+
+$P(y_k=1), P(y_k=0)$
+
+$P(t_1=k)P(y_k=1)C_k^p$
+
+$P(t_1=k)P(y_k=0)C_k^0$
+
+$P(t_1=1)P(y_1=0)P(t_2=2)C_2^t$
+
+$P(t_1=1)P(y_1=0)P(t_2=2)P(y_2=0)C_2^n$
