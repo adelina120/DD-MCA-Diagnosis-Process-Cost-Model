@@ -107,17 +107,20 @@ cost_equation <- function(input){
       
       expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*(GP_post_n + p_t13_exit*ES_yield*penalty)) +
                            (p_t12_gp*(1-GP_yield)*p_t13_es + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
+      
+      delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*GP_post_p) +
+                      (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*
+                      (p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n) + 
+                       p_r2_sm_r2_star*(p_t13_exit*(GP_post_n+penalty) + p_t13_es*(ES_cost+ES_yield*ES_post_p+(1-ES_yield)*ES_post_n)))
     
     } else{ #exhaust all possible tests
       
       expert_alone_cost <- CMA_cost + p_t12_gp*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*GP_post_n) +
                           (p_t12_gp*(1-GP_yield) + p_t12_es)*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n)
+      
+      delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*GP_post_p) +
+                        (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*(ES_cost+ES_yield*ES_post_p+(1-ES_yield)*ES_post_n)
     }
-    
-    #exhaust_or_not condition only applied to expert-alone mode
-    delegation_cost <- CMA_cost + p_r1_gt_r1_star*(GP_cost + GP_yield*GP_post_p + (1-GP_yield)*GP_post_p) +
-                      (p_r1_gt_r1_star*(1-GP_yield) + p_r1_sm_r1_star)*
-                      (p_r2_gt_r2_star*(ES_cost + ES_yield*ES_post_p + (1-ES_yield)*ES_post_n) + p_r2_sm_r2_star*expert_alone_cost)
   }
   
   else { #Formulas for Branch 2, only one decision node
@@ -135,13 +138,16 @@ cost_equation <- function(input){
       expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(ES_post_n + p_t22_exit*CMA_yield*penalty + 
                            p_t22_cma*(CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n))
       
+      delegation_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(ES_post_n + p_r0_gt_r0_star*(CMA_cost+CMA_yield*CMA_post_p+(1-CMA_yield)*CMA_post_n) +
+      p_r0_sm_r0_star*(p_t22_exit*ES_yield*penalty + p_t22_cma*(CMA_cost+CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)))
+      
     } else { #exhaust all possible tests
       
       expert_alone_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(ES_post_n + CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n)
+      
+      delegation_cost <- expert_alone_cost
     }
     
-    delegation_cost <- ES_cost + ES_yield*ES_post_p + (1-ES_yield)*(ES_post_n + p_r0_sm_r0_star*expert_alone_cost + 
-                       p_r0_gt_r0_star*(CMA_cost + CMA_yield*CMA_post_p + (1-CMA_yield)*CMA_post_n))
   }
 
   return (c(expert_alone_cost, delegation_cost))
@@ -317,7 +323,7 @@ ui <- fluidPage(
     ),
     
     mainPanel(
-      div( #Add a seprate introduction page before displaying the plot and the data frame
+      div( #Add a separate introduction page before displaying the plot and the data frame
         id = "intro_page",
         h3("Introduction"),
         p("This app is designed to visualize the cost of the diagnosis procedure for patients with development delays and multiple congenital anomalies.
