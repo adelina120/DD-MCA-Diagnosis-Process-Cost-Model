@@ -27,8 +27,13 @@ generate_data <- function(n, cost_ratio) {
   wes_yield_3tier <- rbeta(n, 228, 464) # WES third-tier yield (mean 0.33)
   wes_yield_2tier <- 0.35 # The yield of WES as second-tier test is slightly lower than first-tier but higher than third-tier
 
-  ai_precision <- rnorm(n,0.7,0.1)  #AI precision
- 
+  # AI precision, assume that it follows a beta distribution with mean 0.7 & SD 0.1
+  mu <- 0.87
+  sigma <- 0.1
+  alpha <- mu * ((mu * (1 - mu) / sigma^2) - 1)
+  beta <- (1 - mu) * ((mu * (1 - mu) / sigma^2) - 1)
+  ai_precision <- rbeta(n,alpha,beta)  #AI precision
+  
   # Expected cost for Scenario 1 (CMA + GP, standard testing)
   s1_cost <- cma_cost + cma_yield*post_test_positive + (1-cma_yield)*(post_test_negative + gp_cost + gp_yield*post_test_positive 
         + (1-gp_yield)*post_test_negative) 
