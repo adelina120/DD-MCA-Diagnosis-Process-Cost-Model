@@ -3,6 +3,8 @@ library(tidyverse)
 library(ggplot2)
 library(dplyr)
 library(gridExtra)
+library(cowplot)
+
 ```
 
 ```{r}
@@ -13,46 +15,41 @@ set.seed(123)
 generate_data <- function(n, cost_ratio) {
   
   # Simulate parameters
-  post_test_positive <- 100  # post-test cost for positive diagnosis
-  post_test_negative <- 200  # post-test cost for negative diagnosis
+  expert_fee <- 165 #cost at decision node
   
   cma_cost <- rgamma(n, 2010,2.44) # cost of CMA
   cma_yield <- rbeta(n, 154,1382) # CMA yield
   
-  gp_cost <- rnorm(n, 1000, 30)  # gene-panel cost
-  gp_yield <- rbeta(n, 24, 89)  # gene-panel yield
-  
-  wes_cost <- cost_ratio*gp_cost
+  #wes_cost <- rnorm(n, 4589.4, 45) #cost of WES
   wes_yield_1tier <- rbeta(n, 27, 46)  # WES first-tier yield (mean 0.37)
   wes_yield_3tier <- rbeta(n, 228, 464) # WES third-tier yield (mean 0.33)
   wes_yield_2tier <- 0.35 # The yield of WES as second-tier test is slightly lower than first-tier but higher than third-tier
-
+  
+  gp_cost <- rnorm(n, 1000, 30)  # gene-panel cost
+  wes_cost <- gp_cost*cost_ratio
+  gp_yield <- rbeta(n, 234, 1871)  # gene-panel yield
+  
   # AI precision, assume that it follows a beta distribution with mean 0.87 & SD 0.1
   mu <- 0.87
-  sigma <- 0.1
+  sigma <- 0.15
   alpha <- mu * ((mu * (1 - mu) / sigma^2) - 1)
   beta <- (1 - mu) * ((mu * (1 - mu) / sigma^2) - 1)
   ai_precision <- rbeta(n,alpha,beta)  #AI precision
   
   # Expected cost for Scenario 1 (CMA + GP, standard testing)
-  s1_cost <- cma_cost + cma_yield*post_test_positive + (1-cma_yield)*(post_test_negative + gp_cost + gp_yield*post_test_positive 
-        + (1-gp_yield)*post_test_negative) 
+  s1_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee) 
   
   # Expected cost for Scenario 2 (CMA + GP + WES)
-  s2_cost <- cma_cost + cma_yield*post_test_positive + (1-cma_yield)*(post_test_negative + gp_cost + gp_yield*post_test_positive 
-        + (1-gp_yield)*(post_test_negative + wes_cost + wes_yield_3tier*post_test_positive + (1-wes_yield_3tier)*post_test_negative))
+  s2_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee + (1-gp_yield)*(wes_cost + expert_fee))
   
   # Expected cost Scenario 3 (CMA + WES)
-  s3_cost <- cma_cost + cma_yield*post_test_positive + (1-cma_yield)*(wes_cost + wes_yield_2tier*post_test_positive 
-        + (1-wes_yield_2tier)*post_test_negative) 
+  s3_cost <- cma_cost + expert_fee + (1-cma_yield)*(wes_cost + expert_fee) 
                     
   # Expected cost for Scenario 4 (WES alone)
-  s4_cost <- wes_cost + wes_yield_1tier*post_test_positive + (1-wes_yield_1tier)*post_test_negative
+  s4_cost <- wes_cost + expert_fee
   
   # AI-delegation cost
-  ai1_cost <- cma_cost + cma_yield*post_test_positive + (1-cma_yield)*(gp_cost + ai_precision*post_test_positive + 
-        (1-ai_precision)*(post_test_negative + wes_cost + wes_yield_3tier*post_test_positive +
-        (1-wes_yield_3tier)*post_test_negative)) #This is only for r > r*
+  ai1_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + (1-ai_precision)*wes_cost) #This is only for r > r*
   
   ai2_cost <- s3_cost #r < r*, the expected cost is the same as CMA + WES (scenario 3)
   
@@ -92,8 +89,10 @@ create_plot <- function(data, title) {
     labs(title = title, x = "AI Precision", y = "Expected Cost") +
     scale_color_manual(values = c("blue", "green", "red", "black", "purple")) +
     theme_minimal() +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    theme(legend.position = "right", legend.title = element_blank())
 }
+
+
 ```
 
 ```{r}
@@ -102,15 +101,15 @@ cost_ratio_2 <- generate_data(200,3)
 cost_ratio_3 <- generate_data(200,1.5)
 ```
 
-
 ```{r}
 plot1 <- create_plot(cost_ratio_1, "Cost Ratio = 5")
 plot2 <- create_plot(cost_ratio_2, "Cost Ratio = 3")
 plot3 <- create_plot(cost_ratio_3, "Cost Ratio = 1.5")
-```
-
-```{r}
 plot1
 plot2
 plot3
+```
+
+```{r}
+plot_grid(plot1, plot2, plot3, ncol = 1)
 ```
