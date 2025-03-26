@@ -19,14 +19,14 @@ wes_yield_3tier <- rbeta(n, 228, 464) # WES third-tier yield (mean 0.33)
 wes_yield_2tier <- 0.35 # The yield of WES as second-tier test is slightly lower than first-tier but higher than third-tier
 
 expert_fee <- 165 # cost at decision node
-cost_ratio_gp <- sample(c(1.5, 3, 5), n, replace = TRUE) 
+cost_ratio_gp <- sample(c(1.5, 3, 5), n, replace = TRUE) # 3 levels of cost-difference ratio
 cost_ratio_cma <- sample(c(1.5, 3, 5), n, replace = TRUE) 
 wes_cost <- rnorm(n, 4589.4, 45) # cost of WES
 cma_cost <- wes_cost / cost_ratio_cma # cost of CMA
 gp_cost <- wes_cost / cost_ratio_gp  # gene-panel cost
 
-cma_ppv <- 0.7638
-cma_npv <- 0.9807
+cma_ppv <- 0.7638 # CMA positive predictive value
+cma_npv <- 0.9807 # CMA negative predictive value
 gp_ppv <- 0.95
 gp_npv <- 0.99
 wes_ppv <- 0.994
@@ -39,9 +39,9 @@ a <- mu * ((mu * (1 - mu) / sigma^2) - 1)
 b <- (1 - mu) * ((mu * (1 - mu) / sigma^2) - 1)
 ai_precision <- rbeta(n,a,b)
 
-alpha <- runif(n, 0.2, 0.8)
+alpha <- runif(n, 0.2, 0.8) # The weighting parameter of the utility function
 beta <- 1 - alpha
-lambda <- 0.03 #assume it's fixed
+lambda <- 0.03 # The parameter of the exponential decay function, exp(-lambda*tat), for turnaround time 
 
 utility <- function(pv, tat){ # pv can be either PPV or NPV
   result <- alpha*(2*pv - 1) + beta*exp(-lambda*tat)
@@ -54,8 +54,8 @@ utility <- function(pv, tat){ # pv can be either PPV or NPV
 generate_data <- function() {
   
   # Effective cost for Scenario 1 (CMA + GP, standard testing)
-  s1_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee) 
-  s1_eff <- cma_yield*utility(cma_ppv, 6) + (1-cma_yield)*(gp_yield*utility(gp_ppv,14) + (1-gp_yield)*utility(gp_npv,18))
+  s1_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee)  #expected cost
+  s1_eff <- cma_yield*utility(cma_ppv, 6) + (1-cma_yield)*(gp_yield*utility(gp_ppv,14) + (1-gp_yield)*utility(gp_npv,18)) #effectiveness
   s1_eff_cost <- s1_cost / s1_eff
   
   # Effective cost for Scenario 2 (CMA + GP + WES)
@@ -127,7 +127,7 @@ ggplot(expert_alone, aes(x = alpha_values, y = effective_cost, color = scenario)
 ggplot(expert_alone, aes(x = alpha_values, y = expected_utility, color = scenario)) +
   geom_line() + 
   labs(x = "alpha",
-       y = "Expected Utility") +
+       y = "Expected Effectiveness") +
   theme_minimal()
 ```
 
