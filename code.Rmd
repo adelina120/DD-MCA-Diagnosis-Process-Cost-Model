@@ -4,112 +4,140 @@ library(ggplot2)
 library(dplyr)
 library(gridExtra)
 library(cowplot)
-
+library(patchwork)
 ```
 
 ```{r}
 set.seed(123)
+
+# Simulate parameters
+n <- 400
+cma_yield <- rbeta(n, 154,1382) # CMA yield
+gp_yield <- rbeta(n, 234, 1871)  # gene-panel yield
+wes_yield_1tier <- rbeta(n, 27, 46)  # WES first-tier yield (mean 0.37)
+wes_yield_3tier <- rbeta(n, 228, 464) # WES third-tier yield (mean 0.33)
+wes_yield_2tier <- 0.35 # The yield of WES as second-tier test is slightly lower than first-tier but higher than third-tier
+
+expert_fee <- 165 # cost at decision node
+cost_ratio_gp <- sample(c(1.5, 3, 5), n, replace = TRUE) 
+cost_ratio_cma <- sample(c(1.5, 3, 5), n, replace = TRUE) 
+wes_cost <- rnorm(n, 4589.4, 45) # cost of WES
+cma_cost <- wes_cost / cost_ratio_cma # cost of CMA
+gp_cost <- wes_cost / cost_ratio_gp  # gene-panel cost
+
+cma_ppv <- 0.7638
+cma_npv <- 0.9807
+gp_ppv <- 0.95
+gp_npv <- 0.99
+wes_ppv <- 0.994
+wes_npv <- 0.999
+
+# AI precision, assume that it follows a beta distribution with mean 0.87 & SD 0.1
+mu <- 0.87
+sigma <- 0.15
+a <- mu * ((mu * (1 - mu) / sigma^2) - 1)
+b <- (1 - mu) * ((mu * (1 - mu) / sigma^2) - 1)
+ai_precision <- rbeta(n,a,b)
+
+alpha <- runif(n, 0.2, 0.8)
+beta <- 1 - alpha
+lambda <- 0.03 #assume it's fixed
+
+utility <- function(pv, tat){ # pv can be either PPV or NPV
+  result <- alpha*(2*pv - 1) + beta*exp(-lambda*tat)
+  return (result)
+}
+
 ```
 
 ```{r}
-generate_data <- function(n, cost_ratio) {
+generate_data <- function() {
   
-  # Simulate parameters
-  expert_fee <- 165 #cost at decision node
-  
-  cma_cost <- rgamma(n, 2010,2.44) # cost of CMA
-  cma_yield <- rbeta(n, 154,1382) # CMA yield
-  
-  #wes_cost <- rnorm(n, 4589.4, 45) #cost of WES
-  wes_yield_1tier <- rbeta(n, 27, 46)  # WES first-tier yield (mean 0.37)
-  wes_yield_3tier <- rbeta(n, 228, 464) # WES third-tier yield (mean 0.33)
-  wes_yield_2tier <- 0.35 # The yield of WES as second-tier test is slightly lower than first-tier but higher than third-tier
-  
-  gp_cost <- rnorm(n, 1000, 30)  # gene-panel cost
-  wes_cost <- gp_cost*cost_ratio
-  gp_yield <- rbeta(n, 234, 1871)  # gene-panel yield
-  
-  # AI precision, assume that it follows a beta distribution with mean 0.87 & SD 0.1
-  mu <- 0.87
-  sigma <- 0.15
-  alpha <- mu * ((mu * (1 - mu) / sigma^2) - 1)
-  beta <- (1 - mu) * ((mu * (1 - mu) / sigma^2) - 1)
-  ai_precision <- rbeta(n,alpha,beta)  #AI precision
-  
-  # Expected cost for Scenario 1 (CMA + GP, standard testing)
+  # Effective cost for Scenario 1 (CMA + GP, standard testing)
   s1_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee) 
+  s1_eff <- cma_yield*utility(cma_ppv, 6) + (1-cma_yield)*(gp_yield*utility(gp_ppv,14) + (1-gp_yield)*utility(gp_npv,18))
+  s1_eff_cost <- s1_cost / s1_eff
   
-  # Expected cost for Scenario 2 (CMA + GP + WES)
+  # Effective cost for Scenario 2 (CMA + GP + WES)
   s2_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee + (1-gp_yield)*(wes_cost + expert_fee))
+  s2_eff <- cma_yield*utility(cma_ppv,6) + (1-cma_yield)*gp_yield*utility(gp_ppv,14) + (1-cma_yield)*(1-gp_yield)*
+            (wes_yield_3tier*utility(wes_ppv,26) + (1-wes_yield_3tier)*utility(wes_npv,26))
+  s2_eff_cost <- s2_cost / s2_eff
   
-  # Expected cost Scenario 3 (CMA + WES)
+  # Effective cost Scenario 3 (CMA + WES)
   s3_cost <- cma_cost + expert_fee + (1-cma_yield)*(wes_cost + expert_fee) 
-                    
-  # Expected cost for Scenario 4 (WES alone)
+  s3_eff <- cma_yield*utility(cma_ppv,6) + (1-cma_yield)*(wes_yield_2tier*utility(wes_ppv,18) + (1-wes_yield_2tier)*utility(wes_npv,18))
+  s3_eff_cost <- s3_cost/s3_eff                 
+  
+  # Effective cost for Scenario 4 (WES alone)
   s4_cost <- wes_cost + expert_fee
+  s4_eff <- wes_yield_1tier*utility(wes_ppv,12) + (1-wes_yield_1tier)*utility(wes_npv,12)
+  s4_eff_cost <- s4_cost/s4_eff
   
-  # AI-delegation cost
-  ai1_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + (1-ai_precision)*wes_cost) #This is only for r > r*
+  # Effective cost for AI-delegation mode (r > r*)
+  ai_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + (1-ai_precision)*wes_cost) #This is only for r > r*
+  ai_eff <- ai_precision*utility(gp_ppv,10) + (1-ai_precision)*(wes_yield_3tier*utility(wes_ppv,18) 
+            + (1-wes_yield_3tier)*utility(wes_npv,18))
+  ai_eff_cost <- ai_cost / ai_eff
   
-  ai2_cost <- s3_cost #r < r*, the expected cost is the same as CMA + WES (scenario 3)
-  
-  # Expected effectiveness of scenario 1
-  s1_eff <- gp_yield
-  
-  # Expected effectiveness of scenario 2
-  s2_eff <- wes_yield_3tier
-  
-  # Expected effectiveness of scenario 3
-  s3_eff <- rep(wes_yield_2tier,n)
-  
-  # Expected effectiveness of scenario 4
-  s4_eff <- wes_yield_1tier
-  
-  # Expected effectiveness of AI-delegation mode
-  ai_eff <- ai_precision + wes_yield_2tier*(1 - ai_precision)
-  
-  data <- data.frame(
-    expected_cost = c(s1_cost, s2_cost, s3_cost, s4_cost, ai1_cost),
-    expected_effectiveness = c(s1_eff, s2_eff, s3_eff, s4_eff, ai_eff),
+  complete_data <- data.frame(
+    scenario = rep(c("Scenario 1 (CMA + GP)", "Scenario 2 (CMA + GP + WES)", "Scenario 3 (CMA + WES)", 
+                     "Scenario 4 (WES alone)", "AI-delegation (r>r*)"), each = n),
+    expected_cost = c(s1_cost, s2_cost, s3_cost, s4_cost, ai_cost),
+    expected_utility = c(s1_eff, s2_eff, s3_eff, s4_eff, ai_eff),
+    effective_cost = c(s1_eff_cost, s2_eff_cost, s3_eff_cost, s4_eff_cost, ai_eff_cost),
+    cost_ratio_cma = rep(cost_ratio_cma,5),
+    cost_ratio_gp = rep(cost_ratio_gp,5),
     ai_performance = rep(ai_precision,5),
-    cost_diff = rep(cost_ratio,5),
-    scenario = rep(c("CMA + GP", "CMA + GP + WES", "CMA + WES", "WES alone","AI-Delegation"), each = n)
+    alpha_values = rep(alpha,5)
   )
-
-  data$scenario <- factor(data$scenario, levels = c("CMA + GP", "CMA + GP + WES", "CMA + WES", "WES alone", "AI-Delegation"))
-  return(data)
-}
-```
-
-```{r}
-create_plot <- function(data, title) {
   
-  ggplot(data, aes(x = ai_performance, y = expected_cost, color = scenario)) +
-    geom_line() +
-    labs(title = title, x = "AI Precision", y = "Expected Cost") +
-    scale_color_manual(values = c("blue", "green", "red", "black", "purple")) +
-    theme_minimal() +
-    theme(legend.position = "right", legend.title = element_blank())
+  complete_data$scenario <- factor(complete_data$scenario, levels = c("Scenario 1 (CMA + GP)", "Scenario 2 (CMA + GP + WES)", 
+                                                         "Scenario 3 (CMA + WES)", "Scenario 4 (WES alone)", "AI-delegation (r>r*)"))
+  
+  return(complete_data)
 }
-
-
 ```
 
 ```{r}
-cost_ratio_1 <- generate_data(200,5)
-cost_ratio_2 <- generate_data(200,3)
-cost_ratio_3 <- generate_data(200,1.5)
+data <- generate_data()
 ```
 
 ```{r}
-plot1 <- create_plot(cost_ratio_1, "Cost Ratio = 5")
-plot2 <- create_plot(cost_ratio_2, "Cost Ratio = 3")
-plot3 <- create_plot(cost_ratio_3, "Cost Ratio = 1.5")
-plot1
-plot2
-plot3
+expert_alone <- data %>% filter(scenario != "AI-delegation (r>r*)")
+
+# Cost difference labels
+cma_labels <- as_labeller(c("1.5" = "WES = 1.5 * CMA",
+                               "3" = "WES = 3 * CMA",
+                               "5" = "WES = 5 * CMA"))
+
+gp_labels <- as_labeller(c("1.5" = "WES = 1.5 * GP",
+                               "3" = "WES = 3 * GP",
+                               "5" = "WES = 5 * GP"))
+
+ggplot(expert_alone, aes(x = alpha_values, y = effective_cost, color = scenario)) +
+  geom_line() + 
+  facet_grid(cost_ratio_cma ~ cost_ratio_gp, labeller = labeller(cost_ratio_cma = cma_labels, cost_ratio_gp = gp_labels)) +
+  labs(x = "alpha",
+       y = "Effective Cost") +
+  theme_minimal()
 ```
 
 ```{r}
-plot_grid(plot1, plot2, plot3, ncol = 1)
+ggplot(expert_alone, aes(x = alpha_values, y = expected_utility, color = scenario)) +
+  geom_line() + 
+  labs(x = "alpha",
+       y = "Expected Utility") +
+  theme_minimal()
+```
+
+
+
+```{r}
+ai_delegation <- data %>% filter(scenario %in% c("Scenario 2 (CMA + GP + WES)", "Scenario 3 (CMA + WES)", "AI-delegation (r>r*)"))
+
+ggplot(ai_delegation, aes(x = alpha_values, y = expected_utility, color = scenario)) +
+  geom_line() +
+  labs(x = "AI Precision", y = "Expected Cost") +
+  theme_minimal()
 ```
