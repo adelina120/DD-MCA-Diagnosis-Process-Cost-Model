@@ -6,3 +6,4 @@
 renv/
 visualization_shiny.Rproj
 .Rprofile
+node_modules/
