@@ -143,24 +143,6 @@ ai_delegation <- data %>% filter(scenario %in% c("Scenario 2 (CMA + GP + ES)", "
 ```
 
 ```{r}
-lambda_symbol <- "\u03BB"
-lambda_labels <- as_labeller(c("0.01" = paste0(lambda_symbol," = 0.01"),
-                               "0.03" = paste0(lambda_symbol," = 0.03"),
-                               "0.05" = paste0(lambda_symbol," = 0.05"),
-                               "0.07" = paste0(lambda_symbol," = 0.07")
-                               ))
-                             
-                             
-ggplot(expert_alone, aes(x = alpha_values, y = expected_cost, color = scenario)) +
-  geom_line() + 
-  facet_wrap(~ lambda_values, labeller = lambda_labels) +
-  labs(x = "\u03B1",
-       y = "Expected Effectiveness"
-       ) +
-  theme_minimal()
-```
-
-```{r}
 ggplot(ai_delegation, aes(x = alpha_values, y = expected_utility, color = scenario)) +
   geom_line() +
   #facet_wrap(~ lambda_values, labeller = lambda_labels) +
