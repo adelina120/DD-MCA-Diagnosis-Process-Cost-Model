@@ -9,36 +9,32 @@ import {
   Select,
   MenuItem,
   Divider,
-  SelectChangeEvent
+  SelectChangeEvent,
+  Grid
 } from '@mui/material';
 import { Parameters } from '../types';
 
 interface ParameterControlsProps {
   parameters: Parameters;
-  onParameterChange: (params: Parameters) => void;
+  onParametersChange: (params: Parameters) => void;
+  xAxis?: keyof Parameters;
 }
 
 const ParameterControls: React.FC<ParameterControlsProps> = ({
   parameters,
-  onParameterChange
+  onParametersChange,
+  xAxis
 }) => {
-  const handleTextFieldChange = (field: keyof Parameters) => (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  const handleChange = (key: keyof Parameters) => (
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const value = parseFloat(event.target.value);
-    onParameterChange({
-      ...parameters,
-      [field]: value
-    });
-  };
-
-  const handleSelectChange = (field: keyof Parameters) => (
-    event: SelectChangeEvent<number>
-  ) => {
-    onParameterChange({
-      ...parameters,
-      [field]: event.target.value
-    });
+    if (!isNaN(value)) {
+      onParametersChange({
+        ...parameters,
+        [key]: value
+      });
+    }
   };
 
   return (
@@ -46,208 +42,289 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
       <Typography variant="h6" gutterBottom>
         Model Parameters
       </Typography>
-      
-      <Box sx={{ mb: 2 }}>
-        <Typography gutterBottom>CMA Parameters</Typography>
-        <TextField
-          fullWidth
-          label="CMA Yield"
-          type="number"
-          value={parameters.cmaYield}
-          onChange={handleTextFieldChange('cmaYield')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="CMA PPV"
-          type="number"
-          value={parameters.cmaPPV}
-          onChange={handleTextFieldChange('cmaPPV')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="CMA NPV"
-          type="number"
-          value={parameters.cmaNPV}
-          onChange={handleTextFieldChange('cmaNPV')}
-          margin="normal"
-        />
-      </Box>
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" gutterBottom>
+            CMA Parameters
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="CMA Cost"
+                type="number"
+                value={parameters.cmaCost}
+                onChange={handleChange('cmaCost')}
+                disabled={xAxis === 'cmaCost'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="CMA Yield"
+                type="number"
+                value={parameters.cmaYield}
+                onChange={handleChange('cmaYield')}
+                disabled={xAxis === 'cmaYield'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="CMA PPV"
+                type="number"
+                value={parameters.cmaPPV}
+                onChange={handleChange('cmaPPV')}
+                disabled={xAxis === 'cmaPPV'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="CMA NPV"
+                type="number"
+                value={parameters.cmaNPV}
+                onChange={handleChange('cmaNPV')}
+                disabled={xAxis === 'cmaNPV'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+          </Grid>
+        </Grid>
 
-      <Divider sx={{ my: 2 }} />
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" gutterBottom>
+            GP Parameters
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="GP Cost"
+                type="number"
+                value={parameters.gpCost}
+                onChange={handleChange('gpCost')}
+                disabled={xAxis === 'gpCost'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="GP Yield"
+                type="number"
+                value={parameters.gpYield}
+                onChange={handleChange('gpYield')}
+                disabled={xAxis === 'gpYield'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="GP PPV"
+                type="number"
+                value={parameters.gpPPV}
+                onChange={handleChange('gpPPV')}
+                disabled={xAxis === 'gpPPV'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="GP NPV"
+                type="number"
+                value={parameters.gpNPV}
+                onChange={handleChange('gpNPV')}
+                disabled={xAxis === 'gpNPV'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+          </Grid>
+        </Grid>
 
-      <Box sx={{ mb: 2 }}>
-        <Typography gutterBottom>Gene Panel Parameters</Typography>
-        <TextField
-          fullWidth
-          label="GP Yield"
-          type="number"
-          value={parameters.gpYield}
-          onChange={handleTextFieldChange('gpYield')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="GP PPV"
-          type="number"
-          value={parameters.gpPPV}
-          onChange={handleTextFieldChange('gpPPV')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="GP NPV"
-          type="number"
-          value={parameters.gpNPV}
-          onChange={handleTextFieldChange('gpNPV')}
-          margin="normal"
-        />
-      </Box>
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" gutterBottom>
+            WES Parameters
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="WES Cost"
+                type="number"
+                value={parameters.wesCost}
+                onChange={handleChange('wesCost')}
+                disabled={xAxis === 'wesCost'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="WES Yield"
+                type="number"
+                value={parameters.wesYield}
+                onChange={handleChange('wesYield')}
+                disabled={xAxis === 'wesYield'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="WES Yield 1 Tier"
+                type="number"
+                value={parameters.wesYield1Tier}
+                onChange={handleChange('wesYield1Tier')}
+                disabled={xAxis === 'wesYield1Tier'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="WES Yield 2 Tier"
+                type="number"
+                value={parameters.wesYield2Tier}
+                onChange={handleChange('wesYield2Tier')}
+                disabled={xAxis === 'wesYield2Tier'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="WES Yield 3 Tier"
+                type="number"
+                value={parameters.wesYield3Tier}
+                onChange={handleChange('wesYield3Tier')}
+                disabled={xAxis === 'wesYield3Tier'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="WES PPV"
+                type="number"
+                value={parameters.wesPPV}
+                onChange={handleChange('wesPPV')}
+                disabled={xAxis === 'wesPPV'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="WES NPV"
+                type="number"
+                value={parameters.wesNPV}
+                onChange={handleChange('wesNPV')}
+                disabled={xAxis === 'wesNPV'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+          </Grid>
+        </Grid>
 
-      <Divider sx={{ my: 2 }} />
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" gutterBottom>
+            Other Parameters
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Expert Fee"
+                type="number"
+                value={parameters.expertFee}
+                onChange={handleChange('expertFee')}
+                disabled={xAxis === 'expertFee'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Alpha"
+                type="number"
+                value={parameters.alpha}
+                onChange={handleChange('alpha')}
+                disabled={xAxis === 'alpha'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Lambda"
+                type="number"
+                value={parameters.lambda}
+                onChange={handleChange('lambda')}
+                disabled={xAxis === 'lambda'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+          </Grid>
+        </Grid>
 
-      <Box sx={{ mb: 2 }}>
-        <Typography gutterBottom>WES Parameters</Typography>
-        <TextField
-          fullWidth
-          label="WES Yield (1st Tier)"
-          type="number"
-          value={parameters.wesYield1Tier}
-          onChange={handleTextFieldChange('wesYield1Tier')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="WES Yield (2nd Tier)"
-          type="number"
-          value={parameters.wesYield2Tier}
-          onChange={handleTextFieldChange('wesYield2Tier')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="WES Yield (3rd Tier)"
-          type="number"
-          value={parameters.wesYield3Tier}
-          onChange={handleTextFieldChange('wesYield3Tier')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="WES PPV"
-          type="number"
-          value={parameters.wesPPV}
-          onChange={handleTextFieldChange('wesPPV')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="WES NPV"
-          type="number"
-          value={parameters.wesNPV}
-          onChange={handleTextFieldChange('wesNPV')}
-          margin="normal"
-        />
-      </Box>
-
-      <Divider sx={{ my: 2 }} />
-
-      <Box sx={{ mb: 2 }}>
-        <Typography gutterBottom>Cost Parameters</Typography>
-        <TextField
-          fullWidth
-          label="Expert Fee"
-          type="number"
-          value={parameters.expertFee}
-          onChange={handleTextFieldChange('expertFee')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="CMA Cost"
-          type="number"
-          value={parameters.cmaCost}
-          onChange={handleTextFieldChange('cmaCost')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="GP Cost"
-          type="number"
-          value={parameters.gpCost}
-          onChange={handleTextFieldChange('gpCost')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="WES Cost"
-          type="number"
-          value={parameters.wesCost}
-          onChange={handleTextFieldChange('wesCost')}
-          margin="normal"
-        />
-      </Box>
-
-      <Divider sx={{ my: 2 }} />
-
-      <Box sx={{ mb: 2 }}>
-        <Typography gutterBottom>Utility Parameters</Typography>
-        <TextField
-          fullWidth
-          label="Alpha"
-          type="number"
-          value={parameters.alpha}
-          onChange={handleTextFieldChange('alpha')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="Lambda"
-          type="number"
-          value={parameters.lambda}
-          onChange={handleTextFieldChange('lambda')}
-          margin="normal"
-        />
-      </Box>
-
-      <Divider sx={{ my: 2 }} />
-
-      <Box sx={{ mb: 2 }}>
-        <Typography gutterBottom>AI Parameters</Typography>
-        <TextField
-          fullWidth
-          label="AI Precision"
-          type="number"
-          value={parameters.aiPrecision}
-          onChange={handleTextFieldChange('aiPrecision')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="AI False Discovery Rate (FDR)"
-          type="number"
-          value={parameters.aiFDR}
-          onChange={handleTextFieldChange('aiFDR')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="AI False Omission Rate (FOR)"
-          type="number"
-          value={parameters.aiFOR}
-          onChange={handleTextFieldChange('aiFOR')}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="AI Negative Predictive Value (NPV)"
-          type="number"
-          value={parameters.aiNPV}
-          onChange={handleTextFieldChange('aiNPV')}
-          margin="normal"
-        />
-      </Box>
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" gutterBottom>
+            AI Parameters
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="AI Precision"
+                type="number"
+                value={parameters.aiPrecision}
+                onChange={handleChange('aiPrecision')}
+                disabled={xAxis === 'aiPrecision'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="AI FDR"
+                type="number"
+                value={parameters.aiFDR}
+                onChange={handleChange('aiFDR')}
+                disabled={xAxis === 'aiFDR'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="AI FOR"
+                type="number"
+                value={parameters.aiFOR}
+                onChange={handleChange('aiFOR')}
+                disabled={xAxis === 'aiFOR'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="AI NPV"
+                type="number"
+                value={parameters.aiNPV}
+                onChange={handleChange('aiNPV')}
+                disabled={xAxis === 'aiNPV'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
     </Box>
   );
 };

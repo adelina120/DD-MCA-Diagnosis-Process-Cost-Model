@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, Container, Grid, Paper, Typography } from '@mui/material';
 import ParameterControls from './components/ParameterControls';
 import Plots from './components/Plots';
-import { Parameters } from './types';
+import PlotControls from './components/PlotControls';
+import { Parameters, PlotConfig, DataPoint } from './types';
 import { generateData } from './utils/dataGenerator';
 
 const theme = createTheme({
@@ -13,38 +14,60 @@ const theme = createTheme({
   },
 });
 
-const defaultParams: Parameters = {
-  n: 400,
-  cmaYield: 0.1,
-  gpYield: 0.11,
-  wesYield1Tier: 0.37,
-  wesYield2Tier: 0.35,
-  wesYield3Tier: 0.33,
-  expertFee: 165,
-  cmaCost: 1529.8,
-  gpCost: 1529.8,
-  wesCost: 4589.4,
-  cmaPPV: 0.7638,
-  cmaNPV: 0.9807,
-  gpPPV: 0.95,
-  gpNPV: 0.99,
-  wesPPV: 0.994,
-  wesNPV: 0.999,
-  aiPrecision: 0.87,
-  aiFDR: 0.13,
-  aiFOR: 0.05,
-  aiNPV: 0.95,
+const initialParameters: Parameters = {
+  cmaCost: 1000,
+  cmaYield: 0.8,
+  cmaPPV: 0.9,
+  cmaNPV: 0.95,
+  gpCost: 2000,
+  gpYield: 0.7,
+  gpPPV: 0.85,
+  gpNPV: 0.9,
+  wesCost: 3000,
+  wesYield: 0.9,
+  wesYield1Tier: 0.6,
+  wesYield2Tier: 0.7,
+  wesYield3Tier: 0.8,
+  wesPPV: 0.95,
+  wesNPV: 0.98,
+  expertFee: 500,
   alpha: 0.5,
-  lambda: 0.03
+  lambda: 0.1,
+  aiPrecision: 0.85,
+  aiFDR: 0.1,
+  aiFOR: 0.05,
+  aiNPV: 0.95
 };
 
-function App() {
-  const [parameters, setParameters] = useState<Parameters>(defaultParams);
-  const [data, setData] = useState(generateData(defaultParams));
+const initialPlotConfig: PlotConfig = {
+  scenarios: [
+    "Scenario 1 (CMA + GP)",
+    "Scenario 2 (CMA + GP + WES)",
+    "Scenario 3 (CMA + WES)",
+    "Scenario 4 (WES alone)",
+    "AI-delegation (r>r*)"
+  ],
+  yAxis: 'effectiveCost',
+  xAxis: 'alpha',
+  showAIComparison: false
+};
 
-  const handleParameterChange = (newParams: Parameters) => {
-    setParameters(newParams);
-    setData(generateData(newParams));
+const App: React.FC = () => {
+  const [parameters, setParameters] = useState<Parameters>(initialParameters);
+  const [plotConfig, setPlotConfig] = useState<PlotConfig>(initialPlotConfig);
+  const [results, setResults] = useState<DataPoint[]>([]);
+
+  useEffect(() => {
+    const newResults = generateData(parameters, plotConfig.xAxis);
+    setResults(newResults);
+  }, [parameters, plotConfig.xAxis]);
+
+  const handleParametersChange = (newParameters: Parameters) => {
+    setParameters(newParameters);
+  };
+
+  const handlePlotConfigChange = (newPlotConfig: PlotConfig) => {
+    setPlotConfig(newPlotConfig);
   };
 
   return (
@@ -60,13 +83,23 @@ function App() {
               <Paper sx={{ p: 2 }}>
                 <ParameterControls
                   parameters={parameters}
-                  onParameterChange={handleParameterChange}
+                  onParametersChange={handleParametersChange}
+                  xAxis={plotConfig.xAxis}
                 />
               </Paper>
             </Grid>
             <Grid item xs={12} md={8}>
               <Paper sx={{ p: 2 }}>
-                <Plots data={data} />
+                <PlotControls
+                  parameters={parameters}
+                  onPlotConfigChange={handlePlotConfigChange}
+                />
+                <Box sx={{ mt: 2 }}>
+                  <Plots
+                    data={results}
+                    plotConfig={plotConfig}
+                  />
+                </Box>
               </Paper>
             </Grid>
           </Grid>
@@ -74,6 +107,6 @@ function App() {
       </Container>
     </ThemeProvider>
   );
-}
+};
 
 export default App; 
