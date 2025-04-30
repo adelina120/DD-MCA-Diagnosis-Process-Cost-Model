@@ -9,7 +9,7 @@ interface PlotControlsProps {
 
 export interface PlotConfig {
   scenarios: string[];
-  yAxis: 'cost' | 'expectedUtility' | 'effectiveCost';
+  yAxis: 'cost' | 'expectedEffectiveness' | 'effectiveCost';
   xAxis: keyof Parameters;
   showAIComparison: boolean;
 }
@@ -24,7 +24,7 @@ const availableScenarios = [
 
 const yAxisOptions = [
   { value: 'cost', label: 'Cost' },
-  { value: 'expectedUtility', label: 'Expected Utility' },
+  { value: 'expectedEffectiveness', label: 'Expected Effectiveness' },
   { value: 'effectiveCost', label: 'Effective Cost' }
 ];
 
@@ -45,10 +45,10 @@ const PlotControls: React.FC<PlotControlsProps> = ({ parameters, onPlotConfigCha
     onPlotConfigChange(newConfig);
   };
 
-  const handleYAxisChange = (event: SelectChangeEvent<'cost' | 'expectedUtility' | 'effectiveCost'>) => {
+  const handleYAxisChange = (event: SelectChangeEvent<'cost' | 'expectedEffectiveness' | 'effectiveCost'>) => {
     const newConfig = {
       ...config,
-      yAxis: event.target.value as 'cost' | 'expectedUtility' | 'effectiveCost'
+      yAxis: event.target.value as 'cost' | 'expectedEffectiveness' | 'effectiveCost'
     };
     setConfig(newConfig);
     onPlotConfigChange(newConfig);
