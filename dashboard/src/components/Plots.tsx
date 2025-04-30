@@ -30,7 +30,7 @@ const Plots: React.FC<PlotsProps> = ({ data, plotConfig }) => {
       case 'cost':
         return point.expectedCost;
       case 'expectedUtility':
-        return point.expectedUtility;
+        return point.expectedEffectiveness;
       case 'effectiveCost':
         return point.effectiveCost;
       default:
