@@ -112,7 +112,7 @@ export const generateData = (params: Parameters, xAxis: keyof Parameters): DataP
           return {
             scenario,
             expectedCost: s1Cost,
-            expectedUtility: s1Eff,
+            expectedEffectiveness: s1Eff,
             effectiveCost: s1EffCost,
             cmaCost: currentParams.cmaCost,
             gpCost: currentParams.gpCost,
@@ -136,7 +136,7 @@ export const generateData = (params: Parameters, xAxis: keyof Parameters): DataP
           return {
             scenario,
             expectedCost: s2Cost,
-            expectedUtility: s2Eff,
+            expectedEffectiveness: s2Eff,
             effectiveCost: s2EffCost,
             cmaCost: currentParams.cmaCost,
             gpCost: currentParams.gpCost,
@@ -160,7 +160,7 @@ export const generateData = (params: Parameters, xAxis: keyof Parameters): DataP
           return {
             scenario,
             expectedCost: s3Cost,
-            expectedUtility: s3Eff,
+            expectedEffectiveness: s3Eff,
             effectiveCost: s3EffCost,
             cmaCost: currentParams.cmaCost,
             gpCost: currentParams.gpCost,
@@ -184,7 +184,7 @@ export const generateData = (params: Parameters, xAxis: keyof Parameters): DataP
           return {
             scenario,
             expectedCost: s4Cost,
-            expectedUtility: s4Eff,
+            expectedEffectiveness: s4Eff,
             effectiveCost: s4EffCost,
             cmaCost: currentParams.cmaCost,
             gpCost: currentParams.gpCost,
@@ -208,7 +208,7 @@ export const generateData = (params: Parameters, xAxis: keyof Parameters): DataP
           return {
             scenario,
             expectedCost: aiCost,
-            expectedUtility: aiEff,
+            expectedEffectiveness: aiEff,
             effectiveCost: aiEffCost,
             cmaCost: currentParams.cmaCost,
             gpCost: currentParams.gpCost,
