@@ -32,7 +32,7 @@ export interface ScenarioResult {
 export interface DataPoint {
   scenario: string;
   expectedCost: number;
-  expectedUtility: number;
+  expectedEffectiveness: number;
   effectiveCost: number;
   cmaCost: number;
   gpCost: number;
@@ -55,9 +55,9 @@ export interface DataPoint {
 
 export interface PlotConfig {
   scenarios: string[];
-  yAxis: 'cost' | 'expectedUtility' | 'effectiveCost';
+  yAxis: 'cost' | 'expectedEffectiveness' | 'effectiveCost';
   xAxis: keyof Parameters;
   showAIComparison: boolean;
 }
 
-export type PlotType = 'effectiveCost' | 'expectedUtility' | 'aiComparison'; 
+export type PlotType = 'effectiveCost' | 'expectedEffectiveness' | 'aiComparison'; 
