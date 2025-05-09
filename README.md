@@ -62,28 +62,24 @@ The build files will be created in the `build` directory.
 
 The dashboard allows you to adjust the following parameters:
 
-### CMA Parameters
+### Cost Parameters
+- CMA Cost
+- GP Cost
+- WES Cost
+- Expert Fee
+
+### Test Performance Parameters
 - CMA Yield
 - CMA PPV
 - CMA NPV
-
-### Gene Panel Parameters
 - GP Yield
 - GP PPV
 - GP NPV
-
-### WES Parameters
 - WES Yield (1st Tier)
 - WES Yield (2nd Tier)
 - WES Yield (3rd Tier)
 - WES PPV
 - WES NPV
-
-### Cost Parameters
-- Expert Fee
-- WES Cost
-- Cost Ratio (WES/CMA)
-- Cost Ratio (WES/GP)
 
 ### Utility Parameters
 - Alpha
