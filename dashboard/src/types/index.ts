@@ -1,4 +1,4 @@
-cexport interface Parameters {
+export interface Parameters {
   cmaCost: number;
   cmaYield: number;
   cmaPPV: number;
