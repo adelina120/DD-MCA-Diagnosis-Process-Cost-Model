@@ -1,4 +1,4 @@
-export interface Parameters {
+cexport interface Parameters {
   cmaCost: number;
   cmaYield: number;
   cmaPPV: number;
@@ -45,6 +45,12 @@ export interface DataPoint {
   wesYield1Tier: number;
   wesYield2Tier: number;
   wesYield3Tier: number;
+  cmaPPV: number;
+  cmaNPV: number;
+  gpPPV: number;
+  gpNPV: number;
+  wesPPV: number;
+  wesNPV: number;
   expertFee: number;
   wesCost: number;
   aiPrecision: number;
