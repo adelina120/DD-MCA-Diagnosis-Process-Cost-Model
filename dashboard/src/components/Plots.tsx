@@ -56,6 +56,7 @@ const Plots: React.FC<PlotsProps> = ({ data, plotConfig }) => {
       title: `${yAxis} vs ${xAxis}`,
       xaxis: { title: xAxis },
       yaxis: { title: yAxis },
+      font: {size: 18},
       showlegend: true
     }
   };
