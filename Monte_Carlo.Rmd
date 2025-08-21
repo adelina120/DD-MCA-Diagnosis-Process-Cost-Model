@@ -5,10 +5,12 @@ library(dplyr)
 library(gridExtra)
 library(cowplot)
 library(patchwork)
+set.seed(123)
 ```
 
 ```{r}
-ppv <- function(se, sp, p){
+# Define functions
+ppv <- function(se, sp, p){ # se = sensitivity, sp = specificity, p = disease prevalence
   value <- (se * p) / (se * p + ((1 - sp) * (1 - p)))
   return(value) 
 }
@@ -17,48 +19,62 @@ npv <- function(se, sp, p){
   value <- (sp * (1 - p)) / ((1 - se) * p + sp * (1 - p))
   return (value)
 }
+
+# Expected utility
+EU <- function(pv, u_t, u_f){   # pv = (PPV OR NPV), u_t = (U_TP OR U_TN), u_f = (U_FP OR U_FN)
+  return (pv*u_t + (1-pv)*u_f)
+}
+
+# QALY function
+qaly <- function(x, tat, u_s0, eu){
+  return (tat*u_s0 + (x-tat)*eu)
+}
 ```
 
 ```{r}
-set.seed(123)
-
 # Simulate parameters
 n <- 400
+
+# Diagnostic yields
 cma_yield <- rbeta(n, 154,1382) # CMA yield
 gp_yield <- rbeta(n, 234, 1871)  # gene-panel yield
-wes_yield_1tier <- rbeta(n, 27, 46)  # WES first-tier yield (mean 0.37)
-wes_yield_3tier <- rbeta(n, 228, 464) # WES third-tier yield (mean 0.33)
-wes_yield_2tier <- 0.35 # The yield of WES as second-tier test is slightly lower than first-tier but higher than third-tier
+es_yield_1tier <- rbeta(n, 27, 46)  # WES first-tier yield (mean 0.37)
+es_yield_3tier <- rbeta(n, 228, 464) # WES third-tier yield (mean 0.33)
+es_yield_2tier <- rbeta(n, 35, 65) # The yield of WES as second-tier test is slightly lower than first-tier but higher than third-tier
 
+# Costs
 expert_fee <- 165 # cost at decision node
-cost_ratio_gp <- sample(c(1.5, 3, 5), n, replace = TRUE) # 3 levels of cost-difference ratio
-cost_ratio_cma <- sample(c(1.5, 3, 5), n, replace = TRUE) 
-wes_cost <- rnorm(n, 4589.4, 45) # cost of WES
-#cma_cost <- wes_cost / cost_ratio_cma # cost of CMA
-cma_cost <- rgamma(n, 2010, 2.44)
-gp_cost <- wes_cost / cost_ratio_gp  # gene-panel cost
+es_cost <- rnorm(n, 4589.4, 45) # cost of WES
+cma_cost <- rgamma(n, 2010, 2.44) # cost of CMA
+gp_cost <- rlnorm(n, log(400), 0.8213) # cost of gene-panel
 
+# Sensitivity & Specificity
 cma_se <- 0.9068
 cma_sp <- 0.9440
 gp_se <- 0.8960
 gp_sp <- 0.9250
-wes_se <- 0.9593
-wes_sp <- 0.9933
+es_se <- 0.9593
+es_sp <- 0.9933
+
+#Disease prevalence
 p <- 0.1665
 
+# PPV & NPV
 cma_ppv <- ppv(cma_se, cma_sp, p)
 cma_npv <- npv(cma_se, cma_sp, p)
 gp_ppv <- ppv(gp_se, gp_sp, p)
 gp_npv <- npv(gp_se, gp_sp, p)
-wes_ppv <- ppv(wes_se, wes_sp, p)
-wes_npv <- npv(wes_se, wes_sp, p)
+es_ppv <- ppv(es_se, es_sp, p)
+es_npv <- npv(es_se, es_sp, p)
 
-# cma_ppv <- 1
-# cma_npv <- 1
-# gp_ppv <- 1
-# gp_npv <- 1
-# wes_ppv <- 1
-# wes_npv <- 1
+# Turnaround time, measured in years
+cma_tat <- (6*7)/365
+cma_gp_tat <- (14*7)/365
+cma_gp_es_tat <- (26*7)/365
+cma_es_tat <- (18*7)/365
+es_tat <- (12*7)/365
+ai_tat1 <- (10*7)/365
+ai_tat2 <- (18*7)/365
 
 # AI precision, assume that it follows a beta distribution with mean 0.87 & SD 0.1
 mu <- 0.87
@@ -67,68 +83,57 @@ a <- mu * ((mu * (1 - mu) / sigma^2) - 1)
 b <- (1 - mu) * ((mu * (1 - mu) / sigma^2) - 1)
 ai_precision <- rbeta(n, a, b)
 
-alpha <- runif(n, 0, 1) # The weighting parameter of the utility function
-beta <- 1 - alpha
-#lambda <- sample(c(0.01, 0.03, 0.05, 0.07), n, replace = TRUE)
-lambda <- 0.03
+# utility weight
+u_tp <- rnorm(n,0.9,0.02)
+u_tn <- 1
+u_fp <- rnorm(n,0.8,0.02)
+u_fn <- runif(n,-1,0)
+u_s0 <- 0
 
-utility <- function(pv, tat){ # pv can be either PPV or NPV
-  result <- alpha*(2*pv - 1) + beta*exp(-lambda*tat) 
-  return (result)
-}
-
-# Effective cost for Scenario 1 (CMA + GP, standard testing)
-s1_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee)  #expected cost
-s1_eff <- cma_yield*utility(cma_ppv, 6) + (1-cma_yield)*(gp_yield*utility(gp_ppv,14) + (1-gp_yield)*utility(gp_npv,14)) 
-s1_eff2 <- cma_yield*utility(cma_ppv, 16) + (1-cma_yield)*(gp_yield*utility(gp_ppv,16) + (1-gp_yield)*utility(gp_npv,16)) 
-s1_eff_cost <- s1_cost / s1_eff
-
-# Effective cost for Scenario 2 (CMA + GP + WES)
-s2_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee + (1-gp_yield)*(wes_cost + expert_fee))
-s2_eff <- cma_yield*utility(cma_ppv,6) + (1-cma_yield)*gp_yield*utility(gp_ppv,14) + (1-cma_yield)*(1-gp_yield)*
-          (wes_yield_3tier*utility(wes_ppv,26) + (1-wes_yield_3tier)*utility(wes_npv,26))
-s2_eff2 <- cma_yield*utility(cma_ppv,16) + (1-cma_yield)*gp_yield*utility(gp_ppv,16) + (1-cma_yield)*(1-gp_yield)*
-          (wes_yield_3tier*utility(wes_ppv,16) + (1-wes_yield_3tier)*utility(wes_npv,16))
-s2_eff_cost <- s2_cost / s2_eff
-
-# Effective cost Scenario 3 (CMA + WES) CMA positive, WES pos & neg
-s3_cost <- cma_cost + expert_fee + (1-cma_yield)*(wes_cost + expert_fee) 
-s3_eff <- cma_yield*utility(cma_ppv,6) + (1-cma_yield)*(wes_yield_2tier*utility(wes_ppv,18) + (1-wes_yield_2tier)*utility(wes_npv,18))
-s3_eff2 <- cma_yield*utility(cma_ppv,16) + (1-cma_yield)*(wes_yield_2tier*utility(wes_ppv,16) + (1-wes_yield_2tier)*utility(wes_npv,16))
-s3_eff_cost <- s3_cost/s3_eff                 
-
-# Effective cost for Scenario 4 (WES alone)
-s4_cost <- wes_cost + expert_fee
-s4_eff <- wes_yield_1tier*utility(wes_ppv,12) + (1-wes_yield_1tier)*utility(wes_npv,12)
-s4_eff2 <- wes_yield_1tier*utility(wes_ppv,16) + (1-wes_yield_1tier)*utility(wes_npv,16)
-s4_eff_cost <- s4_cost/s4_eff
-
-# Effective cost for AI-delegation mode (r > r*)
-ai_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + (1-ai_precision)*wes_cost) #This is only for r > r*
-
-ai_eff <- cma_yield*utility(cma_ppv,6) + (1-cma_yield)*ai_precision*utility(gp_ppv,10) + (1-cma_yield)*(1-ai_precision)*
-          (wes_yield_3tier*utility(wes_ppv,18) + (1-wes_yield_3tier)*utility(wes_npv,18))
-
-ai_eff2 <- cma_yield*utility(cma_ppv,16) + (1-cma_yield)*ai_precision*utility(gp_ppv,16) + (1-cma_yield)*(1-ai_precision)*
-          (wes_yield_3tier*utility(wes_ppv,16) + (1-wes_yield_3tier)*utility(wes_npv,16))
-
-ai_eff_cost <- ai_cost/ai_eff
+# expected utility for different outcome states
+eu_cma_pos <- EU(cma_ppv, u_tp, u_fp) # CMA, positive
+eu_gp_pos <- EU(gp_ppv, u_tp, u_fp) # gene-panel, positive
+eu_gp_neg <- EU(gp_npv, u_tn, u_fn) # gene-panel, negative
+eu_es_pos <- EU(es_ppv, u_tp, u_fp) # ES, positive
+eu_es_neg <- EU(es_npv, u_tn, u_fn) # ES, negative
 ```
 
 ```{r}
-generate_data <- function() {
+generate_data <- function(x) {
+  
+  # Scenario 1 (CMA + GP, standard testing)
+  s1_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee)  #expected cost
+  s1_qaly <- cma_yield*qaly(x,cma_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(gp_yield*qaly(x,cma_gp_tat,u_s0,eu_gp_pos) +    (1-gp_yield)*qaly(x,cma_gp_tat,u_s0,eu_gp_neg)) #expected QALY
+  s1_cpq <- s1_cost/s1_qaly # Cost per QALY
+  
+  # Effective cost for Scenario 2 (CMA + GP + WES)
+  s2_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee + (1-gp_yield)*(es_cost + expert_fee))
+  s2_qaly <- cma_yield*qaly(x,cma_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(gp_yield*qaly(x,cma_gp_tat,u_s0,eu_gp_pos)   + (1-gp_yield)*es_yield_3tier*qaly(x,cma_gp_es_tat,u_s0,eu_es_pos) + (1-gp_yield)*(1-es_yield_3tier)*qaly(x,cma_gp_es_tat,u_s0,eu_es_neg))
+  s2_cpq <- s2_cost/s2_qaly
+  
+  # Effective cost Scenario 3 (CMA + WES) CMA positive, WES pos & neg
+  s3_cost <- cma_cost + expert_fee + (1-cma_yield)*(es_cost + expert_fee) 
+  s3_qaly <- cma_yield*qaly(x,cma_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(es_yield_2tier*qaly(x,cma_es_tat,u_s0,eu_es_pos) + (1-es_yield_2tier)*qaly(x,cma_es_tat,u_s0,eu_es_neg))
+  s3_cpq <- s3_cost/s3_qaly
+  
+  # Effective cost for Scenario 4 (WES alone)
+  s4_cost <- es_cost + expert_fee
+  s4_qaly <- es_yield_1tier*qaly(x,es_tat,u_s0,eu_es_pos) + (1-es_yield_1tier)*qaly(x,es_tat,u_s0,eu_es_neg)
+  s4_cpq <- s4_cost/s4_qaly
+  
+  # Effective cost for AI-delegation mode (r > r*)
+  ai_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + (1-ai_precision)*es_cost) #This is only for r > r*
+  ai_qaly <- cma_yield*qaly(x,cma_tat,u_s0,eu_cma_pos) + (1-cma_yield)*ai_precision*qaly(x,ai_tat1,u_s0,eu_gp_pos) + (1-cma_yield)*(1-ai_precision)*(es_yield_3tier*qaly(x,ai_tat2,u_s0,eu_es_pos) + (1-es_yield_3tier)*qaly(x,ai_tat2,u_s0,eu_es_neg))
+  ai_cpq <- ai_cost/ai_qaly
   
   complete_data <- data.frame(
     scenario = rep(c("Scenario 1 (CMA + GP)", "Scenario 2 (CMA + GP + ES)", "Scenario 3 (CMA + ES)", 
                      "Scenario 4 (ES alone)", "AI-delegation (r>r*)"), each = n),
     expected_cost = c(s1_cost, s2_cost, s3_cost, s4_cost, ai_cost),
-    expected_utility = c(s1_eff, s2_eff, s3_eff, s4_eff, ai_eff),
-    effective_cost = c(s1_eff_cost, s2_eff_cost, s3_eff_cost, s4_eff_cost, ai_eff_cost),
-    cost_ratio_cma = rep(cost_ratio_cma,5),
-    cost_ratio_gp = rep(cost_ratio_gp,5),
+    expected_qaly = c(s1_qaly, s2_qaly, s3_qaly, s4_qaly, ai_qaly),
+    cost_per_qaly = c(s1_cpq, s2_cpq, s3_cpq, s4_cpq, ai_cpq),
     ai_performance = rep(ai_precision,5),
-    alpha_values = rep(alpha,5),
-    lambda_values = rep(lambda,5)
+    number_of_years = rep(x, 5)
   )
   
   complete_data$scenario <- factor(complete_data$scenario, levels = c("Scenario 1 (CMA + GP)", "Scenario 2 (CMA + GP + ES)", 
@@ -136,43 +141,26 @@ generate_data <- function() {
   
   return(complete_data)
 }
+```
 
-data <- generate_data()
+```{r}
+x <- runif(n,1,10)
+data <- generate_data(x)
 expert_alone <- data %>% filter(scenario != "AI-delegation (r>r*)")
 ai_delegation <- data %>% filter(scenario %in% c("Scenario 2 (CMA + GP + ES)", "Scenario 3 (CMA + ES)", "AI-delegation (r>r*)"))
 ```
 
 ```{r}
-ggplot(ai_delegation, aes(x = alpha_values, y = expected_utility, color = scenario)) +
+ggplot(ai_delegation, aes(x = ai_performance, y = cost_per_qaly, color = scenario)) +
   geom_line() +
-  #facet_wrap(~ lambda_values, labeller = lambda_labels) +
-  labs(x = "\u03B1", y = "Expected Effectiveness", title = "b) \u03BB = 0.03, perfect accuracy for all tests") +
+  labs(x = "AI Precision", y = "Cost per QALY") +
   theme_minimal()
 ```
 
 ```{r}
-# Cost difference labels
-cma_labels <- as_labeller(c("1.5" = "ES = 1.5 * CMA",
-                               "3" = "ES = 3 * CMA",
-                               "5" = "ES = 5 * CMA"))
-
-gp_labels <- as_labeller(c("1.5" = "ES = 1.5 * GP",
-                               "3" = "ES = 3 * GP",
-                               "5" = "ES = 5 * GP"))
-
-ggplot(expert_alone, aes(x = alpha_values, y = effective_cost, color = scenario)) +
+ggplot(expert_alone, aes(x = number_of_years, y = cost_per_qaly, color = scenario)) +
   geom_line() + 
-  facet_grid(cost_ratio_cma ~ cost_ratio_gp, labeller = labeller(cost_ratio_cma = cma_labels, cost_ratio_gp = gp_labels)) +
-  labs(x = "\u03B1",
-       y = "Effective Cost") +
-  theme_minimal()
-```
-
-```{r}
-ggplot(ai_delegation, aes(x = ai_performance, y = expected_cost, color = scenario)) +
-  geom_line() + 
-  facet_wrap(cost_ratio_gp, labeller = gp_labels, nrow = 3) +
-  labs(x = "\u03B1",
-       y = "Effective Cost") +
+  labs(x = "Number of Years",
+       y = "Cost per QALY") +
   theme_minimal()
 ```
