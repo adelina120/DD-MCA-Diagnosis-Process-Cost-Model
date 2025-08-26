@@ -251,22 +251,55 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
             <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Alpha"
+                label="Utility of True Positive"
                 type="number"
-                value={parameters.alpha}
-                onChange={handleChange('alpha')}
-                disabled={xAxis === 'alpha'}
+                value={parameters.uTP}
+                onChange={handleChange('uTP')}
+                disabled={xAxis === 'uTP'}
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
             <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Lambda"
+                label="Utility of True Negative"
                 type="number"
-                value={parameters.lambda}
-                onChange={handleChange('lambda')}
-                disabled={xAxis === 'lambda'}
+                value={parameters.uTN}
+                onChange={handleChange('uTN')}
+                disabled={xAxis === 'uTN'}
+                InputLabelProps={{ shrink: true }}
+              />        
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Utility of False Positive"
+                type="number"
+                value={parameters.uFP}
+                onChange={handleChange('uFP')}
+                disabled={xAxis === 'uFP'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Utility of False Negative"
+                type="number"
+                value={parameters.uFN}
+                onChange={handleChange('uFN')}
+                disabled={xAxis === 'uFN'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Number of Years"
+                type="number"
+                value={parameters.numberOfYears}
+                onChange={handleChange('numberOfYears')}
+                disabled={xAxis === 'numberOfYears'}
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>

@@ -15,8 +15,12 @@ export interface Parameters {
   wesPPV: number;
   wesNPV: number;
   expertFee: number;
-  alpha: number;
-  lambda: number;
+  uTP: number;
+  uFP: number;
+  uTN: number;
+  uFN: number;
+  uInitial: number;
+  numberOfYears: number;
   aiPrecision: number;
   aiFDR: number;
   aiFOR: number;
@@ -32,14 +36,12 @@ export interface ScenarioResult {
 export interface DataPoint {
   scenario: string;
   expectedCost: number;
-  expectedEffectiveness: number;
-  effectiveCost: number;
+  expectedQALY: number;
+  costPerQALY: number;
   cmaCost: number;
   gpCost: number;
   aiPerformance: number;
-  alphaValues: number;
-  alpha: number;
-  lambda: number;
+
   cmaYield: number;
   gpYield: number;
   wesYield1Tier: number;
@@ -53,6 +55,12 @@ export interface DataPoint {
   wesNPV: number;
   expertFee: number;
   wesCost: number;
+  uTP: number;
+  uFP: number;
+  uTN: number;
+  uFN: number;
+  uInitial: number;
+  numberOfYears: number;
   aiPrecision: number;
   aiFDR: number;
   aiFOR: number;
@@ -61,9 +69,9 @@ export interface DataPoint {
 
 export interface PlotConfig {
   scenarios: string[];
-  yAxis: 'cost' | 'expectedEffectiveness' | 'effectiveCost';
+  yAxis: 'cost' | 'expectedQALY' | 'costPerQALY';
   xAxis: keyof Parameters;
   showAIComparison: boolean;
 }
 
-export type PlotType = 'effectiveCost' | 'expectedEffectiveness' | 'aiComparison'; 
+export type PlotType = 'costPerQALY' | 'expectedQALY' | 'aiComparison'; 

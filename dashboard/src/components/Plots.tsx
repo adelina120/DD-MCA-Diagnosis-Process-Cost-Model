@@ -29,10 +29,10 @@ const Plots: React.FC<PlotsProps> = ({ data, plotConfig }) => {
     switch (yAxis) {
       case 'cost':
         return point.expectedCost;
-      case 'expectedEffectiveness':
-        return point.expectedEffectiveness;
-      case 'effectiveCost':
-        return point.effectiveCost;
+      case 'expectedQALY':
+        return point.expectedQALY;
+      case 'costPerQALY':
+        return point.costPerQALY;
       default:
         return 0;
     }

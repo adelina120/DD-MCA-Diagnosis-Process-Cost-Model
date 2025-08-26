@@ -9,30 +9,30 @@ interface PlotControlsProps {
 
 export interface PlotConfig {
   scenarios: string[];
-  yAxis: 'cost' | 'expectedEffectiveness' | 'effectiveCost';
+  yAxis: 'cost' | 'expectedQALY' | 'costPerQALY';
   xAxis: keyof Parameters;
   showAIComparison: boolean;
 }
 
 const availableScenarios = [
-  "Scenario 1 (CMA + GP)",
-  "Scenario 2 (CMA + GP + WES)",
-  "Scenario 3 (CMA + WES)",
-  "Scenario 4 (WES alone)",
-  "AI-delegation (r>r*)"
+  "Expert-alone: Scenario 1 (CMA + GP)",
+  "Expert-alone: Scenario 2 (CMA + GP + WES)",
+  "Expert-alone: Scenario 3 (CMA + WES)",
+  "Expert-alone: Scenario 4 (WES alone)",
+  "AI-delegation: r>r* (CMA + GP + WES)"
 ];
 
 const yAxisOptions = [
   { value: 'cost', label: 'Cost' },
-  { value: 'expectedEffectiveness', label: 'Expected Effectiveness' },
-  { value: 'effectiveCost', label: 'Effective Cost' }
+  { value: 'expectedQALY', label: 'Expected QALY' },
+  { value: 'costPerQALY', label: 'Cost Per QALY' }
 ];
 
 const PlotControls: React.FC<PlotControlsProps> = ({ parameters, onPlotConfigChange }) => {
   const [config, setConfig] = React.useState<PlotConfig>({
     scenarios: availableScenarios,
-    yAxis: 'effectiveCost',
-    xAxis: 'alpha',
+    yAxis: 'costPerQALY',
+    xAxis: 'numberOfYears',
     showAIComparison: false
   });
 
@@ -45,10 +45,10 @@ const PlotControls: React.FC<PlotControlsProps> = ({ parameters, onPlotConfigCha
     onPlotConfigChange(newConfig);
   };
 
-  const handleYAxisChange = (event: SelectChangeEvent<'cost' | 'expectedEffectiveness' | 'effectiveCost'>) => {
+  const handleYAxisChange = (event: SelectChangeEvent<'cost' | 'expectedQALY' | 'costPerQALY'>) => {
     const newConfig = {
       ...config,
-      yAxis: event.target.value as 'cost' | 'expectedEffectiveness' | 'effectiveCost'
+      yAxis: event.target.value as 'cost' | 'expectedQALY' | 'costPerQALY'
     };
     setConfig(newConfig);
     onPlotConfigChange(newConfig);
@@ -80,17 +80,18 @@ const PlotControls: React.FC<PlotControlsProps> = ({ parameters, onPlotConfigCha
       'expertFee',
       'cmaCost',
       'gpCost',
-      'wesCost'
+      'wesCost',
+      
     ];
 
     // Add AI-related parameters if AI scenario is selected
-    if (config.scenarios.includes("AI-delegation (r>r*)")) {
+    if (config.scenarios.includes("AI-delegation: r>r* (CMA + GP + WES)")) {
       baseParams.push('aiPrecision', 'aiFDR', 'aiFOR', 'aiNPV');
     }
 
-    // Add alpha and lambda only if y-axis is not cost
+    // Add utility measurements if y-axis is not cost
     if (config.yAxis !== 'cost') {
-      baseParams.push('alpha', 'lambda');
+      baseParams.push('uTP','uFP','uTN','uFN','uInitial','numberOfYears');
     }
 
     return baseParams;

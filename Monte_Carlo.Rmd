@@ -10,6 +10,12 @@ set.seed(123)
 
 ```{r}
 # Define functions
+beta_dist <- function(n, mu, sigma){
+  a <- mu * ((mu * (1 - mu) / sigma^2) - 1)
+  b <- (1 - mu) * ((mu * (1 - mu) / sigma^2) - 1)
+  return (rbeta(n, a, b))
+}
+
 ppv <- function(se, sp, p){ # se = sensitivity, sp = specificity, p = disease prevalence
   value <- (se * p) / (se * p + ((1 - sp) * (1 - p)))
   return(value) 
@@ -33,7 +39,7 @@ qaly <- function(x, tat, u_s0, eu){
 
 ```{r}
 # Simulate parameters
-n <- 400
+n <- 1000
 
 # Diagnostic yields
 cma_yield <- rbeta(n, 154,1382) # CMA yield
@@ -42,13 +48,13 @@ es_yield_1tier <- rbeta(n, 27, 46)  # WES first-tier yield (mean 0.37)
 es_yield_3tier <- rbeta(n, 228, 464) # WES third-tier yield (mean 0.33)
 es_yield_2tier <- rbeta(n, 35, 65) # The yield of WES as second-tier test is slightly lower than first-tier but higher than third-tier
 
-# Costs
+# Costs - huge range
 expert_fee <- 165 # cost at decision node
-es_cost <- rnorm(n, 4589.4, 45) # cost of WES
-cma_cost <- rgamma(n, 2010, 2.44) # cost of CMA
-gp_cost <- rlnorm(n, log(400), 0.8213) # cost of gene-panel
+es_cost <- rlnorm(n, log(4847.47), 0.6)
+cma_cost <- rlnorm(n, log(871.39), 0.45) 
+gp_cost <- rlnorm(n, log(1600), 0.4)
 
-# Sensitivity & Specificity
+# Sensitivity & Specificity (derive Beta distribution)
 cma_se <- 0.9068
 cma_sp <- 0.9440
 gp_se <- 0.8960
@@ -56,7 +62,7 @@ gp_sp <- 0.9250
 es_se <- 0.9593
 es_sp <- 0.9933
 
-#Disease prevalence
+#Disease prevalence (Beta distribution)
 p <- 0.1665
 
 # PPV & NPV
@@ -67,28 +73,29 @@ gp_npv <- npv(gp_se, gp_sp, p)
 es_ppv <- ppv(es_se, es_sp, p)
 es_npv <- npv(es_se, es_sp, p)
 
-# Turnaround time, measured in years
-cma_tat <- (6*7)/365
-cma_gp_tat <- (14*7)/365
-cma_gp_es_tat <- (26*7)/365
-cma_es_tat <- (18*7)/365
-es_tat <- (12*7)/365
-ai_tat1 <- (10*7)/365
-ai_tat2 <- (18*7)/365
+# Turnaround time, measured in weeks - huge range
+expert_tat <- 4
+cma_tat <- sample(c(1:3), size = n, replace = TRUE) # CMA turnaround time: 1-3 weeks
+gp_tat <- sample(c(2:6), size = n, replace = TRUE) # GP turnaround time: 2-6 weeks
+es_tat <- sample(c(4:12), size = n, replace = TRUE) #ES turnaround time: 4-12 weeks
+
+cma_only_tat <- ((expert_tat + cma_tat)*7)/365
+cma_gp_tat <- ((expert_tat*2 + cma_tat + gp_tat)*7)/365
+cma_gp_es_tat <- ((expert_tat*3 + cma_tat + gp_tat + es_tat)*7)/365
+cma_es_tat <- ((expert_tat*2 + cma_tat + es_tat)*7)/365
+es_only_tat <- ((expert_tat + es_tat)*7)/365
+ai_tat1 <- ((expert_tat + cma_tat + gp_tat)*7)/365
+ai_tat2 <- ((expert_tat + cma_tat + gp_tat + es_tat)*7)/365
 
 # AI precision, assume that it follows a beta distribution with mean 0.87 & SD 0.1
-mu <- 0.87
-sigma <- 0.1
-a <- mu * ((mu * (1 - mu) / sigma^2) - 1)
-b <- (1 - mu) * ((mu * (1 - mu) / sigma^2) - 1)
-ai_precision <- rbeta(n, a, b)
+ai_precision <- runif(n,0.1,0.9)
 
-# utility weight
-u_tp <- rnorm(n,0.9,0.02)
-u_tn <- 1
-u_fp <- rnorm(n,0.8,0.02)
-u_fn <- runif(n,-1,0)
-u_s0 <- 0
+# utility weight (Beta)
+u_tp <- runif(n,0.8,0.9)
+u_tn <- runif(n, 0.958, 1)
+u_fp <- runif(n,0.7,0.8)
+u_fn <- runif(n,-0.5,0)
+u_s0 <- 0.5
 
 # expected utility for different outcome states
 eu_cma_pos <- EU(cma_ppv, u_tp, u_fp) # CMA, positive
@@ -102,33 +109,41 @@ eu_es_neg <- EU(es_npv, u_tn, u_fn) # ES, negative
 generate_data <- function(x) {
   
   # Scenario 1 (CMA + GP, standard testing)
-  s1_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee)  #expected cost
-  s1_qaly <- cma_yield*qaly(x,cma_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(gp_yield*qaly(x,cma_gp_tat,u_s0,eu_gp_pos) +    (1-gp_yield)*qaly(x,cma_gp_tat,u_s0,eu_gp_neg)) #expected QALY
+  s1_cost <- cma_cost 
+            + expert_fee 
+            + (1-cma_yield)*(gp_cost + expert_fee)  #expected cost
+  s1_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) 
+            + (1-cma_yield)*(gp_yield*qaly(x,cma_gp_tat,u_s0,eu_gp_pos) 
+            + (1-gp_yield)*qaly(x,cma_gp_tat,u_s0,eu_gp_neg)) #expected QALY
   s1_cpq <- s1_cost/s1_qaly # Cost per QALY
   
   # Effective cost for Scenario 2 (CMA + GP + WES)
   s2_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee + (1-gp_yield)*(es_cost + expert_fee))
-  s2_qaly <- cma_yield*qaly(x,cma_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(gp_yield*qaly(x,cma_gp_tat,u_s0,eu_gp_pos)   + (1-gp_yield)*es_yield_3tier*qaly(x,cma_gp_es_tat,u_s0,eu_es_pos) + (1-gp_yield)*(1-es_yield_3tier)*qaly(x,cma_gp_es_tat,u_s0,eu_es_neg))
+  s2_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(gp_yield*qaly(x,cma_gp_tat,u_s0,eu_gp_pos)   + (1-gp_yield)*es_yield_3tier*qaly(x,cma_gp_es_tat,u_s0,eu_es_pos) + (1-gp_yield)*(1-es_yield_3tier)*qaly(x,cma_gp_es_tat,u_s0,eu_es_neg))
   s2_cpq <- s2_cost/s2_qaly
   
   # Effective cost Scenario 3 (CMA + WES) CMA positive, WES pos & neg
   s3_cost <- cma_cost + expert_fee + (1-cma_yield)*(es_cost + expert_fee) 
-  s3_qaly <- cma_yield*qaly(x,cma_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(es_yield_2tier*qaly(x,cma_es_tat,u_s0,eu_es_pos) + (1-es_yield_2tier)*qaly(x,cma_es_tat,u_s0,eu_es_neg))
+  s3_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(es_yield_2tier*qaly(x,cma_es_tat,u_s0,eu_es_pos) + (1-es_yield_2tier)*qaly(x,cma_es_tat,u_s0,eu_es_neg))
   s3_cpq <- s3_cost/s3_qaly
   
   # Effective cost for Scenario 4 (WES alone)
   s4_cost <- es_cost + expert_fee
-  s4_qaly <- es_yield_1tier*qaly(x,es_tat,u_s0,eu_es_pos) + (1-es_yield_1tier)*qaly(x,es_tat,u_s0,eu_es_neg)
+  s4_qaly <- es_yield_1tier*qaly(x,es_tat,u_s0,eu_es_pos) + (1-es_yield_1tier)*qaly(x,es_only_tat,u_s0,eu_es_neg)
   s4_cpq <- s4_cost/s4_qaly
   
   # Effective cost for AI-delegation mode (r > r*)
   ai_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + (1-ai_precision)*es_cost) #This is only for r > r*
-  ai_qaly <- cma_yield*qaly(x,cma_tat,u_s0,eu_cma_pos) + (1-cma_yield)*ai_precision*qaly(x,ai_tat1,u_s0,eu_gp_pos) + (1-cma_yield)*(1-ai_precision)*(es_yield_3tier*qaly(x,ai_tat2,u_s0,eu_es_pos) + (1-es_yield_3tier)*qaly(x,ai_tat2,u_s0,eu_es_neg))
+  ai_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) + (1-cma_yield)*ai_precision*qaly(x,ai_tat1,u_s0,eu_gp_pos) + (1-cma_yield)*(1-ai_precision)*(es_yield_3tier*qaly(x,ai_tat2,u_s0,eu_es_pos) + (1-es_yield_3tier)*qaly(x,ai_tat2,u_s0,eu_es_neg))
   ai_cpq <- ai_cost/ai_qaly
   
   complete_data <- data.frame(
-    scenario = rep(c("Scenario 1 (CMA + GP)", "Scenario 2 (CMA + GP + ES)", "Scenario 3 (CMA + ES)", 
-                     "Scenario 4 (ES alone)", "AI-delegation (r>r*)"), each = n),
+    scenario = rep(c("Expert-alone: Scenario 1 (CMA + GP)", 
+                     "Expert-alone: Scenario 2 (CMA + GP + ES)", 
+                     "Expert-alone: Scenario 3 (CMA + ES)", 
+                     "Expert-alone: Scenario 4 (ES alone)", 
+                     "AI-delegation: r>r* (CMA + GP + ES)"), 
+                     each = n),
     expected_cost = c(s1_cost, s2_cost, s3_cost, s4_cost, ai_cost),
     expected_qaly = c(s1_qaly, s2_qaly, s3_qaly, s4_qaly, ai_qaly),
     cost_per_qaly = c(s1_cpq, s2_cpq, s3_cpq, s4_cpq, ai_cpq),
@@ -136,31 +151,96 @@ generate_data <- function(x) {
     number_of_years = rep(x, 5)
   )
   
-  complete_data$scenario <- factor(complete_data$scenario, levels = c("Scenario 1 (CMA + GP)", "Scenario 2 (CMA + GP + ES)", 
-                                                         "Scenario 3 (CMA + ES)", "Scenario 4 (ES alone)", "AI-delegation (r>r*)"))
+  complete_data$scenario <- factor(complete_data$scenario, levels = c("Expert-alone: Scenario 1 (CMA + GP)", 
+                                                                      "Expert-alone: Scenario 2 (CMA + GP + ES)", 
+                                                         "Expert-alone: Scenario 3 (CMA + ES)", 
+                                                         "Expert-alone: Scenario 4 (ES alone)", 
+                                                         "AI-delegation: r>r* (CMA + GP + ES)"))
   
   return(complete_data)
 }
 ```
 
 ```{r}
-x <- runif(n,1,10)
+x <- 3 #number of years in QALY
 data <- generate_data(x)
-expert_alone <- data %>% filter(scenario != "AI-delegation (r>r*)")
-ai_delegation <- data %>% filter(scenario %in% c("Scenario 2 (CMA + GP + ES)", "Scenario 3 (CMA + ES)", "AI-delegation (r>r*)"))
-```
+expert_alone <- data %>% filter(scenario != "AI-delegation: r>r* (CMA + GP + ES)")
+ai_delegation <- data %>% filter(scenario %in% c("Expert-alone: Scenario 2 (CMA + GP + ES)", 
+                                                 "Expert-alone: Scenario 3 (CMA + ES)", 
+                                                 "AI-delegation: r>r* (CMA + GP + ES)"))
 
-```{r}
-ggplot(ai_delegation, aes(x = ai_performance, y = cost_per_qaly, color = scenario)) +
-  geom_line() +
-  labs(x = "AI Precision", y = "Cost per QALY") +
+# Create AI precision bins
+ai_delegation <- ai_delegation %>%
+  mutate(ai_precision_bin = cut(ai_performance,
+                                breaks = c(0.1, 0.25, 0.5, 0.75, 0.9),
+                                labels = c("0.1-0.25", "0.25-0.5", "0.5-0.75", "0.75-0.9"),
+                                include.lowest = TRUE))
+
+# Box plot of cost per QALY by AI precision bin
+ggplot(ai_delegation, aes(x = ai_precision_bin, y = cost_per_qaly, fill = scenario)) +
+  geom_boxplot() +
+  labs(x = "AI Precision Range", y = "Cost per QALY") +
   theme_minimal()
 ```
 
 ```{r}
-ggplot(expert_alone, aes(x = number_of_years, y = cost_per_qaly, color = scenario)) +
-  geom_line() + 
-  labs(x = "Number of Years",
+sensitivity_analysis <- function(param_name,low, high, x=1) {
+                                 
+  # Store base-case
+  base_df <- generate_data(x)
+  base_out <- base_df$cost_per_qaly
+  
+  # Modify the parameter low
+  assign(param_name, low, envir = .GlobalEnv)
+  low_df <- generate_data(x)
+  low_out <- low_df$cost_per_qaly
+  
+  # Modify the parameter high
+  assign(param_name, high, envir = .GlobalEnv)
+  high_df <- generate_data(x)
+  high_out <- high_df$cost_per_qaly
+  
+  # Reset param to base (optional if looping later)
+  
+  return(data.frame(
+    scenario = base_df$scenario,
+    parameter = param_name,
+    low = low_out,
+    high = high_out,
+    base = base_out
+  ))
+}
+
+sens_results <- do.call(rbind, list(
+  sensitivity_analysis("cma_cost", 0.8*cma_cost, 1.2*cma_cost, 1),
+  sensitivity_analysis("gp_cost", 0.8*gp_cost, 1.2*gp_cost, 1),
+  sensitivity_analysis("es_cost", 0.8*es_cost, 1.2*es_cost, 1),
+  sensitivity_analysis("ai_precision", 0.6, 0.9, 1),
+  sensitivity_analysis("cma_tat", 0.7*cma_tat, 1.3*cma_tat, 1), # example TAT
+  sensitivity_analysis("gp_tat", 0.7*cma_tat, 1.3*cma_tat, 1), # example TAT
+  sensitivity_analysis("es_tat", 0.7*cma_tat, 1.3*cma_tat, 1) # example TAT
+))
+
+tornado_df <- sens_results %>%
+  mutate(min_val = pmin(low, high),
+         max_val = pmax(low, high),
+         width = abs(high - low)) %>%
+  group_by(scenario, parameter) %>%
+  summarise(base = mean(base), 
+            min_val = mean(min_val), 
+            max_val = mean(max_val),
+            width = mean(width)) %>%
+  arrange(desc(width))
+
+ggplot(tornado_df, 
+       aes(x = reorder(parameter, width), 
+           ymin = min_val, ymax = max_val)) +
+  geom_linerange(size = 6, color = "skyblue") +
+  geom_point(aes(y = base), color = "black", size = 3) +
+  coord_flip() +
+  facet_wrap(~ scenario, scales = "free_x") +
+  labs(title = "Tornado Diagram by Scenario",
+       x = "Parameter",
        y = "Cost per QALY") +
   theme_minimal()
 ```

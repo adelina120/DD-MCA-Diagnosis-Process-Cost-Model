@@ -31,8 +31,12 @@ const initialParameters: Parameters = {
   wesPPV: 0.95,
   wesNPV: 0.98,
   expertFee: 500,
-  alpha: 0.5,
-  lambda: 0.1,
+  uTP: 0.6,
+  uFP: 0.5,
+  uTN: 1,
+  uFN: -0.1,
+  uInitial: 0,
+  numberOfYears: 1,
   aiPrecision: 0.85,
   aiFDR: 0.1,
   aiFOR: 0.05,
@@ -41,14 +45,14 @@ const initialParameters: Parameters = {
 
 const initialPlotConfig: PlotConfig = {
   scenarios: [
-    "Scenario 1 (CMA + GP)",
-    "Scenario 2 (CMA + GP + WES)",
-    "Scenario 3 (CMA + WES)",
-    "Scenario 4 (WES alone)",
-    "AI-delegation (r>r*)"
+    "Expert-alone: Scenario 1 (CMA + GP)",
+    "Expert-alone: Scenario 2 (CMA + GP + WES)",
+    "Expert-alone: Scenario 3 (CMA + WES)",
+    "Expert-alone: Scenario 4 (WES alone)",
+    "AI-delegation: r>r* (CMA + GP + WES)"
   ],
-  yAxis: 'effectiveCost',
-  xAxis: 'alpha',
+  yAxis: 'costPerQALY',
+  xAxis: 'numberOfYears',
   showAIComparison: false
 };
 
