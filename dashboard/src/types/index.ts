@@ -45,7 +45,6 @@ export interface DataPoint {
   cmaCost: number;
   gpCost: number;
   aiPerformance: number;
-
   cmaYield: number;
   gpYield: number;
   wesYield1Tier: number;
@@ -57,6 +56,10 @@ export interface DataPoint {
   gpNPV: number;
   wesPPV: number;
   wesNPV: number;
+  cmaTAT: number;
+  gpTAT: number;
+  wesTAT: number;
+  expertTAT: number;
   expertFee: number;
   wesCost: number;
   uTP: number;
