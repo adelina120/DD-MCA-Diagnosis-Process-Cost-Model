@@ -3,10 +3,12 @@ export interface Parameters {
   cmaYield: number;
   cmaPPV: number;
   cmaNPV: number;
+  cmaTAT: number;
   gpCost: number;
   gpYield: number;
   gpPPV: number;
   gpNPV: number;
+  gpTAT: number;
   wesCost: number;
   wesYield: number;
   wesYield1Tier: number;
@@ -14,7 +16,9 @@ export interface Parameters {
   wesYield3Tier: number;
   wesPPV: number;
   wesNPV: number;
+  wesTAT: number;
   expertFee: number;
+  expertTAT: number;
   uTP: number;
   uFP: number;
   uTN: number;

@@ -92,6 +92,17 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="CMA Turnaroud Time (weeks)"
+                type="number"
+                value={parameters.cmaTAT}
+                onChange={handleChange('cmaTAT')}
+                disabled={xAxis === 'cmaTAT'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
           </Grid>
         </Grid>
 
@@ -144,9 +155,19 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="GP Turnaroud Time (weeks)"
+                type="number"
+                value={parameters.gpNPV}
+                onChange={handleChange('gpTAT')}
+                disabled={xAxis === 'gpTAT'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
           </Grid>
         </Grid>
-
         <Grid item xs={12}>
           <Typography variant="subtitle1" gutterBottom>
             WES Parameters
@@ -228,8 +249,19 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
                 disabled={xAxis === 'wesNPV'}
                 InputLabelProps={{ shrink: true }}
               />
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="WES Turnaroud Time (weeks)"
+                type="number"
+                value={parameters.wesTAT}
+                onChange={handleChange('wesTAT')}
+                disabled={xAxis === 'wesTAT'}
+                InputLabelProps={{ shrink: true }}
+              />
             </Grid>
           </Grid>
+        </Grid>
         </Grid>
 
         <Grid item xs={12}>
@@ -362,4 +394,4 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
   );
 };
 
-export default ParameterControls; 
+export default ParameterControls;
