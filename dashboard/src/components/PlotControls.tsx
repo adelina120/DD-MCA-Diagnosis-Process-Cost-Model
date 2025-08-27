@@ -77,11 +77,14 @@ const PlotControls: React.FC<PlotControlsProps> = ({ parameters, onPlotConfigCha
       'gpNPV',
       'wesPPV',
       'wesNPV',
+      'cmaTAT',
+      'gpTAT',
+      'wesTAT',
       'expertFee',
+      'expertTAT',
       'cmaCost',
       'gpCost',
       'wesCost',
-      
     ];
 
     // Add AI-related parameters if AI scenario is selected
