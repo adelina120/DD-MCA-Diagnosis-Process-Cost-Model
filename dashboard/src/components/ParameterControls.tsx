@@ -249,6 +249,7 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
                 disabled={xAxis === 'wesNPV'}
                 InputLabelProps={{ shrink: true }}
               />
+            </Grid>
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -259,10 +260,9 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
                 disabled={xAxis === 'wesTAT'}
                 InputLabelProps={{ shrink: true }}
               />
-            </Grid>
           </Grid>
         </Grid>
-        </Grid>
+      </Grid>
 
         <Grid item xs={12}>
           <Typography variant="subtitle1" gutterBottom>
