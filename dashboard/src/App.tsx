@@ -19,12 +19,10 @@ const initialParameters: Parameters = {
   cmaYield: 0.8,
   cmaPPV: 0.9,
   cmaNPV: 0.95,
-  cmaTAT: 2,
   gpCost: 2000,
   gpYield: 0.7,
   gpPPV: 0.85,
-  gpNPV: 0.9,
-  gpTAT: 4, 
+  gpNPV: 0.9, 
   wesCost: 3000,
   wesYield: 0.9,
   wesYield1Tier: 0.6,
@@ -32,9 +30,7 @@ const initialParameters: Parameters = {
   wesYield3Tier: 0.8,
   wesPPV: 0.95,
   wesNPV: 0.98,
-  wesTAT: 8.0, // in weeks
   expertFee: 500,
-  expertTAT: 4, // in weeks
   uTP: 0.6,
   uFP: 0.5,
   uTN: 1.0,

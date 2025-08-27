@@ -249,6 +249,7 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
                 disabled={xAxis === 'wesNPV'}
                 InputLabelProps={{ shrink: true }}
               />
+            </Grid>
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -327,6 +328,17 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
             <Grid item xs={6}>
               <TextField
                 fullWidth
+                label="Initial Utility (before diagnosis)"
+                type="number"
+                value={parameters.uInitial}
+                onChange={handleChange('uInitial')}
+                disabled={xAxis === 'uInitial'}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
                 label="Number of Years"
                 type="number"
                 value={parameters.numberOfYears}
@@ -393,5 +405,6 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
     </Box>
   );
 };
+
 
 export default ParameterControls;
