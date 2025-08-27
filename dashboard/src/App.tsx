@@ -40,7 +40,11 @@ const initialParameters: Parameters = {
   aiPrecision: 0.85,
   aiFDR: 0.1,
   aiFOR: 0.05,
-  aiNPV: 0.95
+  aiNPV: 0.95,
+  cmaTAT: 2,        // Add these missing properties
+  gpTAT: 4,
+  wesTAT: 8,
+  expertTAT: 4,
 };
 
 const initialPlotConfig: PlotConfig = {

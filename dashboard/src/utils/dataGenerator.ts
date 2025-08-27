@@ -139,7 +139,7 @@ export const generateData = (params: Parameters, xAxis: keyof Parameters): DataP
 
       // Return the appropriate data point based on the scenario
       switch (scenario) {
-        case "Scenario 1 (CMA + GP)":
+        case "Expert-alone: Scenario 1 (CMA + GP)":
           return {
             scenario,
             expectedCost: s1Cost,
@@ -177,7 +177,7 @@ export const generateData = (params: Parameters, xAxis: keyof Parameters): DataP
             aiFOR: currentParams.aiFOR,
             aiNPV: currentParams.aiNPV
           };
-        case "Scenario 2 (CMA + GP + WES)":
+        case "Expert-alone: Scenario 2 (CMA + GP + WES)":
           return {
             scenario,
             expectedCost: s2Cost,
@@ -215,7 +215,7 @@ export const generateData = (params: Parameters, xAxis: keyof Parameters): DataP
             aiFOR: currentParams.aiFOR,
             aiNPV: currentParams.aiNPV
           };
-        case "Scenario 3 (CMA + WES)":
+        case "Expert-alone: Scenario 3 (CMA + WES)":
           return {
             scenario,
             expectedCost: s3Cost,
@@ -253,7 +253,7 @@ export const generateData = (params: Parameters, xAxis: keyof Parameters): DataP
             aiFOR: currentParams.aiFOR,
             aiNPV: currentParams.aiNPV
           };
-        case "Scenario 4 (WES alone)":
+        case "Expert-alone: Scenario 4 (WES alone)":
           return {
             scenario,
             expectedCost: s4Cost,
@@ -291,7 +291,7 @@ export const generateData = (params: Parameters, xAxis: keyof Parameters): DataP
             aiFOR: currentParams.aiFOR,
             aiNPV: currentParams.aiNPV
           };
-        case "AI-delegation (r>r*)":
+        case "AI-delegation: r>r* (CMA + GP + WES)":
           return {
             scenario,
             expectedCost: aiCost,
