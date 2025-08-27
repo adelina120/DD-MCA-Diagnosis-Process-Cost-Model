@@ -38,6 +38,27 @@ qaly <- function(x, tat, u_s0, eu){
 ```
 
 ```{r}
+mean_val <- 4875
+
+# Choose sigma to control spread (try 0.7 for moderate spread)
+sigma <- 0.4
+mu <- log(mean_val) - (sigma^2)/2
+
+shape <- 4
+scale <- mean_val / shape
+
+# Generate samples
+set.seed(123)
+#samples <- rlnorm(1000, meanlog = log(1000), sdlog = sigma)
+samples <- rgamma(1000, shape = 4, scale = 4875/4)
+
+# Check min/max
+min(samples) # Should be close to 400
+max(samples) # Should be close to 10000
+mean(samples) # Should be close to 4847.47
+```
+
+```{r}
 # Simulate parameters
 n <- 1000
 
@@ -50,12 +71,9 @@ es_yield_2tier <- rbeta(n, 35, 65) # The yield of WES as second-tier test is sli
 
 # Costs - huge range
 expert_fee <- 165 # cost at decision node
-# es_cost <- rlnorm(n, log(4847.47), 0.6)
-# cma_cost <- rlnorm(n, log(871.39), 0.45) 
-# gp_cost <- rlnorm(n, log(1600), 0.4)
-es_cost <- runif(n, 400, 6000)
-cma_cost <- runif(n, 800, 2500)
-gp_cost <- runif(n, 250, 2000)
+es_cost <- rgamma(n, shape = 4, scale = 4847.47/4)
+cma_cost <- rlnorm(n, meanlog = log(1000)-0.3^2/2, sdlog = 0.3) 
+gp_cost <- rlnorm(n, meanlog = log(1600)-0.4^2/2, sdlog = 0.4)
 
 # Sensitivity & Specificity (derive Beta distribution)
 cma_se <- 0.9068
@@ -109,38 +127,39 @@ eu_es_neg <- EU(es_npv, u_tn, u_fn) # ES, negative
 ```
 
 ```{r}
-# Scenario 1 (CMA + GP, standard testing)
-s1_cost <- cma_cost 
-          + expert_fee 
-          + (1-cma_yield)*(gp_cost + expert_fee)  #expected cost
-s1_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) 
-          + (1-cma_yield)*(gp_yield*qaly(x,cma_gp_tat,u_s0,eu_gp_pos) 
-          + (1-gp_yield)*qaly(x,cma_gp_tat,u_s0,eu_gp_neg)) #expected QALY
-s1_cpq <- s1_cost/s1_qaly # Cost per QALY
 
-# Effective cost for Scenario 2 (CMA + GP + WES)
-s2_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee + (1-gp_yield)*(es_cost + expert_fee))
-s2_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(gp_yield*qaly(x,cma_gp_tat,u_s0,eu_gp_pos)   + (1-gp_yield)*es_yield_3tier*qaly(x,cma_gp_es_tat,u_s0,eu_es_pos) + (1-gp_yield)*(1-es_yield_3tier)*qaly(x,cma_gp_es_tat,u_s0,eu_es_neg))
-s2_cpq <- s2_cost/s2_qaly
-
-# Effective cost Scenario 3 (CMA + WES) CMA positive, WES pos & neg
-s3_cost <- cma_cost + expert_fee + (1-cma_yield)*(es_cost + expert_fee) 
-s3_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(es_yield_2tier*qaly(x,cma_es_tat,u_s0,eu_es_pos) + (1-es_yield_2tier)*qaly(x,cma_es_tat,u_s0,eu_es_neg))
-s3_cpq <- s3_cost/s3_qaly
-
-# Effective cost for Scenario 4 (WES alone)
-s4_cost <- es_cost + expert_fee
-s4_qaly <- es_yield_1tier*qaly(x,es_tat,u_s0,eu_es_pos) + (1-es_yield_1tier)*qaly(x,es_only_tat,u_s0,eu_es_neg)
-s4_cpq <- s4_cost/s4_qaly
-
-# Effective cost for AI-delegation mode (r > r*)
-ai_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + (1-ai_precision)*es_cost) #This is only for r > r*
-ai_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) + (1-cma_yield)*ai_precision*qaly(x,ai_tat1,u_s0,eu_gp_pos) + (1-cma_yield)*(1-ai_precision)*(es_yield_3tier*qaly(x,ai_tat2,u_s0,eu_es_pos) + (1-es_yield_3tier)*qaly(x,ai_tat2,u_s0,eu_es_neg))
-ai_cpq <- ai_cost/ai_qaly
 ```
 
 ```{r}
 generate_data <- function(x) {
+  # Scenario 1 (CMA + GP, standard testing)
+  s1_cost <- cma_cost 
+            + expert_fee 
+            + (1-cma_yield)*(gp_cost + expert_fee)  #expected cost
+  s1_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) 
+            + (1-cma_yield)*(gp_yield*qaly(x,cma_gp_tat,u_s0,eu_gp_pos) 
+            + (1-gp_yield)*qaly(x,cma_gp_tat,u_s0,eu_gp_neg)) #expected QALY
+  s1_cpq <- s1_cost/s1_qaly # Cost per QALY
+  
+  # Effective cost for Scenario 2 (CMA + GP + WES)
+  s2_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + expert_fee + (1-gp_yield)*(es_cost + expert_fee))
+  s2_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(gp_yield*qaly(x,cma_gp_tat,u_s0,eu_gp_pos)   + (1-gp_yield)*es_yield_3tier*qaly(x,cma_gp_es_tat,u_s0,eu_es_pos) + (1-gp_yield)*(1-es_yield_3tier)*qaly(x,cma_gp_es_tat,u_s0,eu_es_neg))
+  s2_cpq <- s2_cost/s2_qaly
+  
+  # Effective cost Scenario 3 (CMA + WES) CMA positive, WES pos & neg
+  s3_cost <- cma_cost + expert_fee + (1-cma_yield)*(es_cost + expert_fee) 
+  s3_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) + (1-cma_yield)*(es_yield_2tier*qaly(x,cma_es_tat,u_s0,eu_es_pos) + (1-es_yield_2tier)*qaly(x,cma_es_tat,u_s0,eu_es_neg))
+  s3_cpq <- s3_cost/s3_qaly
+  
+  # Effective cost for Scenario 4 (WES alone)
+  s4_cost <- es_cost + expert_fee
+  s4_qaly <- es_yield_1tier*qaly(x,es_tat,u_s0,eu_es_pos) + (1-es_yield_1tier)*qaly(x,es_only_tat,u_s0,eu_es_neg)
+  s4_cpq <- s4_cost/s4_qaly
+  
+  # Effective cost for AI-delegation mode (r > r*)
+  ai_cost <- cma_cost + expert_fee + (1-cma_yield)*(gp_cost + (1-ai_precision)*es_cost) #This is only for r > r*
+  ai_qaly <- cma_yield*qaly(x,cma_only_tat,u_s0,eu_cma_pos) + (1-cma_yield)*ai_precision*qaly(x,ai_tat1,u_s0,eu_gp_pos) + (1-cma_yield)*(1-ai_precision)*(es_yield_3tier*qaly(x,ai_tat2,u_s0,eu_es_pos) + (1-es_yield_3tier)*qaly(x,ai_tat2,u_s0,eu_es_neg))
+  ai_cpq <- ai_cost/ai_qaly
   
   complete_data <- data.frame(
     scenario = rep(c("Expert-alone: Scenario 1 (CMA + GP)", 
@@ -196,7 +215,6 @@ boxplot <- function(data, param, breaks, labels, x_lab){
   
   return(plot)
 }
-
 ```
 
 ```{r}
