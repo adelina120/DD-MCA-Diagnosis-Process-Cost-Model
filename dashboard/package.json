@@ -2,7 +2,7 @@
   "name": "mca-diagnosis-dashboard",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://<adelina120>.github.io/<DD-MCA-Diagnosis-Process-Cost-Model>",
+  "homepage": "https://adelina120.github.io/DD-MCA-Diagnosis-Process-Cost-Model",
   "dependencies": {
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
