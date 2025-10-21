@@ -49,7 +49,7 @@ es_yield_3tier <- rbeta(n, 228, 464) # WES third-tier yield (mean 0.33)
 es_yield_2tier <- rbeta(n, 35, 65) # The yield of WES as second-tier test is slightly lower than first-tier but higher than third-tier
 
 # Costs - huge range
-expert_fee <- 165 # cost at decision node
+expert_fee <- 174.28 # cost at decision node
 es_cost <- rgamma(n, shape = 4, scale = 4847.47/4)
 cma_cost <- rlnorm(n, meanlog = log(1000)-0.3^2/2, sdlog = 0.3) 
 gp_cost <- rlnorm(n, meanlog = log(1600)-0.4^2/2, sdlog = 0.4)
