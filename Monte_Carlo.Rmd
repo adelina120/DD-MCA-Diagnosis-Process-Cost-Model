@@ -181,6 +181,23 @@ ai_delegation <- data %>% filter(scenario %in% c("Expert-alone: Scenario 2 (CMA 
 ```
 
 ```{r}
+summary_stats <- data %>%
+  group_by(scenario) %>%
+  summarise(
+    mean_cost = mean(cost_per_qaly, na.rm = TRUE),
+    median_cost = median(cost_per_qaly, na.rm = TRUE),
+    min_cost = min(cost_per_qaly),
+    max_cost = max(cost_per_qaly),
+    sd_cost = sd(cost_per_qaly, na.rm = TRUE),
+    n = sum(!is.na(cost_per_qaly)),
+    se = sd_cost / sqrt(n),
+    ci_lower = mean_cost - 1.96 * se,
+    ci_upper = mean_cost + 1.96 * se
+  )
+
+```
+
+```{r}
 boxplot <- function(data, param, y_var, breaks, labels, x_lab, y_lab){
   
   data <- data %>% mutate(param_bins = cut(data[[param]],
@@ -197,7 +214,6 @@ boxplot <- function(data, param, y_var, breaks, labels, x_lab, y_lab){
 }
 ```
 
-
 ```{r}
 # Figure 5a
 es_cost_min <- min(expert_alone$es_cost)
@@ -207,7 +223,9 @@ fig5a <- boxplot(expert_alone, "es_cost", "cost_per_qaly",
                  c(400, 4500, 9000, 13000, 17000), 
                  c("400-4500", "4500-9000", "9000-13000", "13000-17000"),
                  "ES Cost Range", "Cost Per QALY")
+fig5a
 ```
+
 ```{r}
 # Figure 6a
 fig6a <- boxplot(ai_delegation, "ai_performance", "cost_per_qaly",
@@ -216,6 +234,7 @@ fig6a <- boxplot(ai_delegation, "ai_performance", "cost_per_qaly",
                  "AI Precision", "Cost Per QALY")
 fig6a
 ```
+
 ```{r}
 # Figure 6b
 gp_cost_min <- min(ai_delegation$gp_cost)
